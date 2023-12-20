@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Optional
 
 from sqlalchemy import Column, String, Integer, Date, ForeignKey
 from pydantic import BaseModel
@@ -32,8 +33,8 @@ class NewScrapCompanyDartInfo(BaseCompanies):
     business_category_desc = Column(String(255), comment='산업코드명')
     establishment_date = Column(String(20), comment='설립일')
     acct_month = Column(String(50), comment='재무일자')
-    create_date = Column(Date, comment='생성일')
-    update_date = Column(Date, comment='수정일')
+    create_date = Column(Date, default=date.today, comment='생성일')
+    update_date = Column(Date, default=date.today, comment='수정일')
 
     # 인코딩 설정
     __table_args__ = {
@@ -46,27 +47,25 @@ class NewScrapCompanyDartInfoPydantic(BaseModel):
     """DART 기업 정보 Pydantic 모델"""
 
     # 모델 필드 정의
-    company_id: int
-    origin_id: int
-    company_name: str
-    biz_num: str
-    corporation_num: str
-    real_company_name: str
-    representation_name: str
-    listing_market_id: str
-    listing_market_desc: str
-    address: str
-    homepage: str
-    tel: str
-    fax: str
-    business_condition_code: str
-    business_condition_desc: str
-    business_category_code: str
-    business_category_desc: str
-    establishment_date: str
-    acct_month: str
-    create_date: date
-    update_date: date
+    company_id: Optional[int] = None
+    origin_id: Optional[int] = None
+    company_name: Optional[str] = None
+    biz_num: Optional[str] = None
+    corporation_num: Optional[str] = None
+    real_company_name: Optional[str] = None
+    representation_name: Optional[str] = None
+    listing_market_id: Optional[str] = None
+    listing_market_desc: Optional[str] = None
+    address: Optional[str] = None
+    homepage: Optional[str] = None
+    tel: Optional[str] = None
+    fax: Optional[str] = None
+    business_condition_code: Optional[str] = None
+    business_condition_desc: Optional[str] = None
+    business_category_code: Optional[str] = None
+    business_category_desc: Optional[str] = None
+    establishment_date: Optional[str] = None
+    acct_month: Optional[str] = None
 
     class Config:
         from_attributes = True
