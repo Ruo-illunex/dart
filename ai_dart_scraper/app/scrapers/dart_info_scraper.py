@@ -28,6 +28,7 @@ class DartInfoScraper:
 
         self._opdr = OpenDartReader(DART_API_KEY)
         self._corp_codes_ls = self._get_corp_code_list()
+        self.batch_size = 100
 
 
     def _get_corp_code_list(self) -> list:
@@ -88,6 +89,19 @@ class DartInfoScraper:
         return [company_info for company_info in await asyncio.gather(*tasks) if company_info is not None]
 
     async def scrape_dart_info(self) -> None:
-        """DART에서 기업 정보를 수집하는 함수"""
+        """DART에서 기업 정보를 수집하는 함수. 100개의 데이터가 모일 때마다 데이터베이스에 저장합니다."""
         company_info_list = await self._get_company_info_list()
-        self._collections_db.bulk_upsert_data_collectdart(company_info_list)
+
+        temp_list = []  # 임시 저장 리스트
+        for company_info in company_info_list:
+            temp_list.append(company_info)
+
+            # temp_list에 100개의 데이터가 모이면 데이터베이스에 저장
+            if len(temp_list) == self.batch_size:
+                self._collections_db.bulk_upsert_data_collectdart(temp_list)
+                temp_list = []  # 저장 후 리스트 초기화
+
+        # 남은 데이터가 있다면 마지막으로 저장
+        if temp_list:
+            self._collections_db.bulk_upsert_data_collectdart(temp_list)
+
