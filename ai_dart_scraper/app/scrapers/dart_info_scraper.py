@@ -85,7 +85,7 @@ class DartInfoScraper:
         tasks = [self._get_company_info(corp_code) for corp_code in self._corp_codes_ls]
         return [company_info for company_info in await asyncio.gather(*tasks) if company_info is not None]
 
-    def scrape_dart_info(self) -> None:
+    async def scrape_dart_info(self) -> None:
         """DART에서 기업 정보를 수집하는 함수"""
-        company_info_list = asyncio.run(self._get_company_info_list())
+        company_info_list = await self._get_company_info_list()
         self._collections_db.bulk_upsert_data_collectdart(company_info_list)

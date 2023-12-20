@@ -46,5 +46,6 @@ async def health_check():
 @app.get("/scrape/dart_info")
 async def scrape_dart_info():
     """OpenDartReader를 이용해 모든 기업의 기업 정보를 수집하는 함수"""
-    dart_info_scraper = DartInfoScraper()
-    await dart_info_scraper.scrape_dart_info()
+    scraper = DartInfoScraper()
+    await scraper.scrape_dart_info()
+    return {"status": "Scraping in progress..."}
