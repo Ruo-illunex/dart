@@ -14,6 +14,7 @@ sqlalchemy = "^2.0.23"
 python-dotenv = "^1.0.0"
 pymysql = "^1.1.0"
 uvicorn = "^0.24.0.post1"
+aiohttp = "^3.9.1"
 
 
 [build-system]

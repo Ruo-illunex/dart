@@ -4,6 +4,7 @@ import traceback
 from typing import List
 
 import OpenDartReader
+import aiohttp
 from pydantic import ValidationError
 
 from app.common.db.collections_database import CollectionsDatabase
@@ -27,6 +28,8 @@ class DartInfoScraper:
         self._company_id_dict = CompaniesDatabase().company_id_dict  # {corporation_num: company_id, ...}
 
         self._opdr = OpenDartReader(DART_API_KEY)
+        self.url = 'https://opendart.fss.or.kr/api/company.json'
+        self.params = {'crtfc_key': DART_API_KEY}
         self._corp_codes_ls = self._get_corp_code_list()
         self.batch_size = 100
 
@@ -55,13 +58,19 @@ class DartInfoScraper:
     async def _get_company_info(self, corp_code: str, semaphore: asyncio.Semaphore) -> CollectDartPydantic:
         async with semaphore:
             try:
-                company_info = await asyncio.to_thread(self._opdr.company, str(corp_code))
+                self.params['corp_code'] = corp_code
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(self.url, params=self.params) as response:
+                        company_info = await response.json()
+
+                # company_info = await asyncio.to_thread(self._opdr.company, str(corp_code))
                 status = company_info.pop('status')
                 message = company_info.pop('message')
                 if status == '000':
                     # 기업 정보에 company_id 추가
                     company_info = self.__add_company_id_to_company_info(company_info)
                     result = CollectDartPydantic(**company_info)  # CollectDartPydantic 모델로 변환
+                    print(result)
                 else:
                     err_msg = f"Error: {status} {message}"
                     self.logger.error(err_msg)
