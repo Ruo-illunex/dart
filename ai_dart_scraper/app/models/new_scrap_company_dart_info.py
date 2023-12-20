@@ -14,7 +14,7 @@ class NewScrapCompanyDartInfo(BaseCompanies):
 
     # 테이블 컬럼 정의
     scrap_id = Column(Integer, primary_key=True, autoincrement=True, comment='고유번호')
-    company_id = Column(Integer, ForeignKey('new_scrap_company.id'), nullable=False, comment='new_scrap_company.id')
+    company_id = Column(Integer, nullable=False, comment='new_scrap_company.id')
     origin_id = Column(Integer, comment='dart: 16, 2016 -> coex')
     company_name = Column(String(255), comment='기업명')
     biz_num = Column(String(13), comment='사업자등록번호')

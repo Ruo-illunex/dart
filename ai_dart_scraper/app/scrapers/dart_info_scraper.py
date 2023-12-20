@@ -25,7 +25,8 @@ class DartInfoScraper:
             file_path
         )
         self._collections_db = CollectionsDatabase()
-        self._company_id_dict = CompaniesDatabase().company_id_dict  # {corporation_num: company_id, ...}
+        self._companies_db = CompaniesDatabase()
+        self._company_id_dict = self._companies_db.company_id_dict  # {corporation_num: company_id, ...}
 
         self._opdr = OpenDartReader(DART_API_KEY)
         self.url = 'https://opendart.fss.or.kr/api/company.json'
@@ -49,7 +50,7 @@ class DartInfoScraper:
             dict: 기업 정보
         """
         # 기업 정보에 company_id 추가: bizr_no를 키로 사용
-        company_info['company_id'] = self._company_id_dict.get(company_info.get('bizr_no'))
+        company_info['company_id'] = self._company_id_dict.get(company_info.get('jurir_no'))
         return company_info
 
     async def _delay(self):
@@ -70,7 +71,6 @@ class DartInfoScraper:
                     # 기업 정보에 company_id 추가
                     company_info = self.__add_company_id_to_company_info(company_info)
                     result = CollectDartPydantic(**company_info)  # CollectDartPydantic 모델로 변환
-                    print(result)
                 else:
                     err_msg = f"Error: {status} {message}"
                     self.logger.error(err_msg)
@@ -88,29 +88,26 @@ class DartInfoScraper:
 
             return result
 
-    async def _get_company_info_list(self) -> List[CollectDartPydantic]:
-        """OpenDartReader를 이용해 기업 정보를 가져오는 함수
-        Returns:
-            List[CollectDartPydantic]: 기업 정보 리스트
-        """
-        semaphore = asyncio.Semaphore(5)    # 동시에 5개의 코루틴만 실행
-        tasks = [self._get_company_info(corp_code, semaphore) for corp_code in self._corp_codes_ls]
-        return [company_info for company_info in await asyncio.gather(*tasks) if company_info is not None]
-
     async def scrape_dart_info(self) -> None:
         """DART에서 기업 정보를 수집하는 함수. 100개의 데이터가 모일 때마다 데이터베이스에 저장합니다."""
-        company_info_list = await self._get_company_info_list()
+        semaphore = asyncio.Semaphore(5)  # 동시에 5개의 코루틴만 실행
+        tasks = [self._get_company_info(corp_code, semaphore) for corp_code in self._corp_codes_ls]
 
         temp_list = []  # 임시 저장 리스트
-        for company_info in company_info_list:
-            temp_list.append(company_info)
+        for task in asyncio.as_completed(tasks):
+            company_info = await task
+            if company_info:
+                temp_list.append(company_info)
+                print(f"temp_list: {len(temp_list)}")
 
-            # temp_list에 100개의 데이터가 모이면 데이터베이스에 저장
-            if len(temp_list) == self.batch_size:
-                self._collections_db.bulk_upsert_data_collectdart(temp_list)
-                temp_list = []  # 저장 후 리스트 초기화
+                # temp_list에 100개의 데이터가 모이면 데이터베이스에 저장
+                if len(temp_list) == self.batch_size:
+                    self._collections_db.bulk_upsert_data_collectdart(temp_list)
+                    success_msg = f"Saved {len(temp_list)} data"
+                    self.logger.info(success_msg)
+                    print(success_msg)
+                    temp_list = []  # 저장 후 리스트 초기화
 
         # 남은 데이터가 있다면 마지막으로 저장
         if temp_list:
             self._collections_db.bulk_upsert_data_collectdart(temp_list)
-
