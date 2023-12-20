@@ -17,8 +17,9 @@ class CollectionsDatabase:
     def __init__(self) -> None:
         self.engine = create_engine(COLLECTIONS_DB_URL, pool_recycle=3600, pool_size=20, max_overflow=0)
         self.SessionLocal = sessionmaker(bind=self.engine)
-        file_path = FILE_PATHS["log"] + f'database/collections_{get_current_datetime()}.log'
+        file_path = FILE_PATHS["log"] + f'database'
         make_dir(file_path)
+        file_path += f'/collections_{get_current_datetime()}.log'
         self.logger = setup_logger(
             "collections_database",
             file_path
