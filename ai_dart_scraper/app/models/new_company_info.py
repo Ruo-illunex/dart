@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Column, String, Integer, Text, Date, BIT, CHAR
+from sqlalchemy import Column, String, Integer, Text, Date, Boolean, CHAR
 from pydantic import BaseModel
 
 from app.common.db.base import BaseCompanies
@@ -40,7 +40,7 @@ class NewCompanyInfo(BaseCompanies):
     head_office = Column(CHAR(1), default='1', comment='본사여부')
     category = Column(String(255), default='', comment='카테고리')
     keyword = Column(String(500), default='', comment='키워드')
-    visible = Column(BIT, default=1, comment='공개유무(1:공개, 0:비공개)')
+    visible = Column(Boolean, default=True, comment='공개유무(1:공개, 0:비공개)')
     description = Column(Text, comment='소개')
     origin_id = Column(Integer, comment='원본 ID 구분')
     listing_market_id = Column(String(3), comment='상장시장구분코드')
@@ -48,7 +48,7 @@ class NewCompanyInfo(BaseCompanies):
     country = Column(String(255), comment='기업국가')
     logo_url = Column(String(500), comment='로고 URL')
     illu_id = Column(String(13))
-    is_koscom_scrap_success = Column(BIT, default=0, comment='코스콤 수집 성공여부')
+    is_koscom_scrap_success = Column(Boolean, default=False, comment='코스콤 수집 성공여부')
     create_date = Column(Date, comment='생성일')
     update_date = Column(Date, comment='수정일')
 
@@ -90,7 +90,7 @@ class NewCompanyInfoPydantic(BaseModel):
     head_office: str
     category: str
     keyword: str
-    visible: int
+    visible: bool
     description: str
     origin_id: int
     listing_market_id: str
@@ -98,7 +98,7 @@ class NewCompanyInfoPydantic(BaseModel):
     country: str
     logo_url: str
     illu_id: str
-    is_koscom_scrap_success: int
+    is_koscom_scrap_success: bool
     create_date: date
     update_date: date
 
