@@ -13,7 +13,7 @@ from app.config.settings import FILE_PATHS, SYNOLOGY_CHAT
 
 # 로거 설정
 current_time = get_current_datetime()
-file_path = f'{FILE_PATHS["log"]}main_logger/main_logger_{current_time}.log'
+file_path = FILE_PATHS["log"] + f'main_logger/main_logger_{current_time}.log'
 make_dir(file_path)
 logger = setup_logger(
     "main_logger",

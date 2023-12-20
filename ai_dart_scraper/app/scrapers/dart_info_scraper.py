@@ -16,7 +16,7 @@ from app.models_init import CollectDartPydantic
 
 class DartInfoScraper:
     def __init__(self) -> None:
-        file_path = f'{FILE_PATHS["log"]}scrapers/dart_info_{get_current_datetime()}.log'
+        file_path = FILE_PATHS["log"] + f'scrapers/dart_info_{get_current_datetime()}.log'
         make_dir(file_path)
         self.logger = setup_logger(
             "dart_info_scraper",
