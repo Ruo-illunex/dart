@@ -1,7 +1,5 @@
-import time
 import asyncio
 import traceback
-from typing import List
 
 import OpenDartReader
 import aiohttp

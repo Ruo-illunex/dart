@@ -1,7 +1,7 @@
 import traceback
 from typing import List
-
 from contextlib import contextmanager
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -24,6 +24,7 @@ class CollectionsDatabase:
             "collections_database",
             file_path
         )
+        self.compids_and_corpcodes = self._query_companyids_and_corpcodes_from_collectdart()
         self.last_queried_id_collectdart = None
 
     @contextmanager
@@ -38,6 +39,19 @@ class CollectionsDatabase:
             raise e
         finally:
             session.close()
+
+    def _query_companyids_and_corpcodes_from_collectdart(self) -> list:
+        """CollectDart 테이블에서 company_id와 corp_code를 조회하는 함수
+        Returns:
+            list: [(company_id, corp_code), ...]
+        """
+        with self.get_session() as session:
+            try:
+                existing_data = session.query(CollectDart.company_id, CollectDart.corp_code).all()
+                return existing_data
+            except SQLAlchemyError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
 
     def bulk_upsert_data_collectdart(self, data_list: List[CollectDartPydantic]) -> None:
         """데이터베이스에 데이터를 일괄 추가 또는 업데이트하는 함수

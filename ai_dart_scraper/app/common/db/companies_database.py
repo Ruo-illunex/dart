@@ -1,7 +1,9 @@
 import traceback
+from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config.settings import COMPANIES_DB_URL
 from app.models_init import NewCompanyInfo, NewScrapCompanyDartInfo, CodeClass
@@ -25,19 +27,31 @@ class CompaniesDatabase:
         self.company_id_dict = {}   # {corporation_num: company_id, ...}
         self._transform_list_to_dict()
 
-    def _query_ids_and_corpnums_from_newscrapcompanydartinfo(self) -> list:
+    @contextmanager
+    def get_session(self):
+        """세션 컨텍스트 매니저"""
         session = self.SessionLocal()
         try:
-            existing_data = session.query(NewScrapCompanyDartInfo.company_id, NewScrapCompanyDartInfo.corporation_num).all()
-            return existing_data    # [(company_id, corporation_num), ...]
-        except Exception as e:
-            err_msg = traceback.format_exc()
-            self.logger.error(f"Error: {e}\n{err_msg}")
+            yield session
+            session.commit()
+        except SQLAlchemyError as e:
+            session.rollback()
+            raise e
         finally:
             session.close()
 
+    def _query_ids_and_corpnums_from_newscrapcompanydartinfo(self) -> list:
+        with self.get_session() as session:
+            try:
+                existing_data = session.query(NewScrapCompanyDartInfo.company_id, NewScrapCompanyDartInfo.corporation_num).all()
+                return existing_data    # [(company_id, corporation_num), ...]
+            except SQLAlchemyError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
+
     def _transform_list_to_dict(self) -> None:
         existing_data = self._query_ids_and_corpnums_from_newscrapcompanydartinfo()
-        for data in existing_data:
-            self.company_id_dict[data[1]] = data[0]
+        if existing_data:
+            for data in existing_data:
+                self.company_id_dict[data[1]] = data[0]
 
