@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "ai-dart-scraper"
+version = "0.1.0"
+description = ""
+authors = ["Ruo Lee <ruo@illunex.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.105.0"
+pandas = "^2.1.4"
+opendartreader = "^0.2.3"
+sqlalchemy = "^2.0.23"
+python-dotenv = "^1.0.0"
+pymysql = "^1.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

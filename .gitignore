@@ -1,0 +1,10 @@
+**/.venv/
+**/.env
+**/.env.dev
+**/.env.prod
+.venv/
+.env
+.env.dev
+.env.prod
+
+

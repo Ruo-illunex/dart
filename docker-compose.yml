@@ -1,0 +1,12 @@
+version: '3.3'
+
+services:
+  ai_dart_scraper:
+    build: ./ai_dart_scraper
+    image: ai_dart_scraper:1.0.0
+    restart: unless-stopped # 컨테이너가 종료되지 않는 한 항상 재시작
+    ports:
+      - "8502:8080"  # 포트 변경
+    env_file:
+      - ./ai_dart_scraper/.env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers 1
