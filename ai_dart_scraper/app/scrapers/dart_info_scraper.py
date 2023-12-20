@@ -58,8 +58,8 @@ class DartInfoScraper:
         try:
             # OpenDartReader를 이용해 기업 정보 가져오기 - 비동기 처리
             company_info = await asyncio.to_thread(self._opdr.company, str(corp_code))
-            status = company_info['status'].pop()
-            message = company_info['message'].pop()
+            status = company_info.pop('status')
+            message = company_info.pop('message')
             if status == '000':
                 # 기업 정보에 company_id 추가
                 company_info = self.__add_company_id_to_company_info(company_info)
