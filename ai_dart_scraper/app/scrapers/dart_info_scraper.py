@@ -48,41 +48,43 @@ class DartInfoScraper:
         company_info['company_id'] = self._company_id_dict.get(company_info.get('bizr_no'))
         return company_info
 
-    async def _get_company_info(self, corp_code: str) -> CollectDartPydantic:
-        """OpenDartReader를 이용해 기업 정보를 가져오는 함수
-        Args:
-            corp_code (str): OpenDartReader를 이용해 가져온 기업의 고유번호
-        Returns:
-            dict: 기업 정보
-        """
-        try:
-            # OpenDartReader를 이용해 기업 정보 가져오기 - 비동기 처리
-            company_info = await asyncio.to_thread(self._opdr.company, str(corp_code))
-            status = company_info.pop('status')
-            message = company_info.pop('message')
-            if status == '000':
-                # 기업 정보에 company_id 추가
-                company_info = self.__add_company_id_to_company_info(company_info)
-                return CollectDartPydantic(**company_info)  # CollectDartPydantic 모델로 변환
-            else:
-                err_msg = f"Error: {status} {message}"
-                self.logger.error(err_msg)
-                return None
-        except ValidationError as e:
-            err_msg = traceback.format_exc()
-            self.logger.error(f"Error: {e}\n{err_msg}")
-            return None
-        except Exception as e:
-            err_msg = traceback.format_exc()
-            self.logger.error(f"Error: {e}\n{err_msg}")
-            return None
+    async def _delay(self):
+        await asyncio.sleep(1.2)
+
+    async def _get_company_info(self, corp_code: str, semaphore: asyncio.Semaphore) -> CollectDartPydantic:
+        async with semaphore:
+            try:
+                company_info = await asyncio.to_thread(self._opdr.company, str(corp_code))
+                status = company_info.pop('status')
+                message = company_info.pop('message')
+                if status == '000':
+                    # 기업 정보에 company_id 추가
+                    company_info = self.__add_company_id_to_company_info(company_info)
+                    result = CollectDartPydantic(**company_info)  # CollectDartPydantic 모델로 변환
+                else:
+                    err_msg = f"Error: {status} {message}"
+                    self.logger.error(err_msg)
+                    result = None
+            except ValidationError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
+                result = None
+            except Exception as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
+                result = None
+            finally:
+                await self._delay()
+
+            return result
 
     async def _get_company_info_list(self) -> List[CollectDartPydantic]:
         """OpenDartReader를 이용해 기업 정보를 가져오는 함수
         Returns:
             List[CollectDartPydantic]: 기업 정보 리스트
         """
-        tasks = [self._get_company_info(corp_code) for corp_code in self._corp_codes_ls]
+        semaphore = asyncio.Semaphore(5)    # 동시에 5개의 코루틴만 실행
+        tasks = [self._get_company_info(corp_code, semaphore) for corp_code in self._corp_codes_ls]
         return [company_info for company_info in await asyncio.gather(*tasks) if company_info is not None]
 
     async def scrape_dart_info(self) -> None:
