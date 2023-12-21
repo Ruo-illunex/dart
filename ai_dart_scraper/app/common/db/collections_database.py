@@ -50,10 +50,12 @@ class CollectionsDatabase:
         """
         with self.get_session() as session:
             try:
+                # self._company_ids_from_newscrapcompanydartinfo 에 있는 company_id와 stock_code가 있는 데이터만 조회
                 existing_data = session.query(CollectDart.company_id, CollectDart.corp_code).filter(
-                    CollectDart.company_id.in_(self._company_ids_from_newscrapcompanydartinfo)
+                    CollectDart.company_id.in_(self._company_ids_from_newscrapcompanydartinfo),
+                    CollectDart.stock_code != None
                 ).all()
-                return existing_data
+                return existing_data    # [(company_id, corp_code), ...]
             except SQLAlchemyError as e:
                 err_msg = traceback.format_exc()
                 self.logger.error(f"Error: {e}\n{err_msg}")
