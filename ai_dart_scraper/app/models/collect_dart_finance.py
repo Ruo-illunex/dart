@@ -10,7 +10,7 @@ from app.common.db.base import BaseCollections
 class CollectDartFinance(BaseCollections):
     """DART에서 수집한 재무 정보 모델 클래스"""
 
-    __tablename__ = 'financial_report'
+    __tablename__ = 'collect_dart_finance'
 
     # 테이블 컬럼 정의
     id = Column(BigInteger, primary_key=True, autoincrement=True, comment='고유번호')
