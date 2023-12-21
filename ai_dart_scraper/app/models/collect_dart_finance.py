@@ -15,10 +15,12 @@ class CollectDartFinance(BaseCollections):
     # 테이블 컬럼 정의
     id = Column(BigInteger, primary_key=True, autoincrement=True, comment='고유번호')
     company_id = Column(Integer, nullable=True, comment='companies.new_company_info.id')
-    rcpt_no = Column(String(14), comment='접수번호')
+    rcept_no = Column(String(14), comment='접수번호')
     reprt_code = Column(String(5), comment='보고서 코드')
     bsns_year = Column(Integer, comment='사업 연도')
     corp_code = Column(String(8), comment='고유번호')
+    fs_div = Column(String(3), comment='개별/연결구분')
+    fs_nm = Column(String(100), comment='개별/연결명')
     sj_div = Column(String(10), comment='재무제표 구분')
     sj_nm = Column(String(100), comment='재무제표 명')
     account_id = Column(String(20), comment='계정ID')
@@ -49,10 +51,12 @@ class CollectDartFinancePydantic(BaseModel):
 
     # 모델 필드 정의
     company_id: Optional[int] = None
-    rcpt_no: Optional[str] = None
+    rcept_no: Optional[str] = None
     reprt_code: Optional[str] = None
     bsns_year: Optional[int] = None
     corp_code: Optional[str] = None
+    fs_div: Optional[str] = None
+    fs_nm: Optional[str] = None
     sj_div: Optional[str] = None
     sj_nm: Optional[str] = None
     account_id: Optional[str] = None

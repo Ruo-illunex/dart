@@ -10,7 +10,7 @@ from app.config.settings import COLLECTIONS_DB_URL
 from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
-from app.models_init import CollectDart, CollectDartPydantic
+from app.models_init import CollectDart, CollectDartPydantic, CollectDartFinance, CollectDartFinancePydantic
 
 
 class CollectionsDatabase:
@@ -76,6 +76,42 @@ class CollectionsDatabase:
             if to_add:
                 session.bulk_save_objects(to_add)
 
+            session.commit()
+
+    def bulk_upsert_data_collectdartfinance(self, data_list: List[CollectDartFinancePydantic]) -> None:
+        """데이터베이스에 데이터를 일괄 추가 또는 업데이트하는 함수
+        Args:
+            data_list (List[CollectDartFinancePydantic]): 추가 또는 업데이트할 데이터 리스트
+        """
+        with self.get_session() as session:
+            to_add = []
+            for data in data_list:
+                existing_data = session.query(CollectDartFinance).filter(
+                    CollectDartFinance.company_id == data.company_id,
+                    CollectDartFinance.corp_code == data.corp_code,
+                    CollectDartFinance.bsns_year == data.bsns_year,
+                    CollectDartFinance.reprt_code == data.reprt_code,
+                    CollectDartFinance.fs_div == data.fs_div,
+                    CollectDartFinance.sj_div == data.sj_div,
+                    CollectDartFinance.sj_nm == data.sj_nm,
+                    CollectDartFinance.account_id == data.account_id,
+                    CollectDartFinance.account_nm == data.account_nm,
+                    CollectDartFinance.account_detail == data.account_detail
+                ).first()
+                if existing_data:
+                    # 변경된 데이터의 키를 가져오고 해당 필드만 업데이트
+                    update_data = data.dict(exclude_unset=True)
+                    for key, value in update_data.items():
+                        setattr(existing_data, key, value)
+                else:
+                    # 새 데이터 객체 생성 및 추가
+                    new_data = CollectDartFinance(**data.dict())
+                    to_add.append(new_data)
+
+            # 새로 추가할 데이터가 있으면 일괄 처리
+            if to_add:
+                session.bulk_save_objects(to_add)
+                
             session.commit()
 
     def query_collectdart(self, batchsize: int = 1000) -> list:
