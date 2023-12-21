@@ -56,7 +56,7 @@ class DartInfoScraper:
     async def _get_company_info(self, corp_code: str, semaphore: asyncio.Semaphore) -> CollectDartPydantic:
         async with semaphore:
             try:
-                self.params['corp_code'] = corp_code
+                self._params['corp_code'] = corp_code
                 async with aiohttp.ClientSession() as session:
                     async with session.get(self._url, params=self._params) as response:
                         if response.status != 200:

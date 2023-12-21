@@ -102,7 +102,7 @@ class DartFinanceScraper:
     async def scrape_dart_finance(self) -> None:
         """DART에서 재무 정보를 수집하는 함수"""
         semaphore = asyncio.Semaphore(5)
-        tasks = [self._get_company_finance_info_list(corp_code, company_id, semaphore) for company_id, corp_code in self._compids_and_corpcodes]
+        tasks = [self._get_company_finance_info_list(str(corp_code), int(company_id), semaphore) for company_id, corp_code in self._compids_and_corpcodes]
         
         temp_list = []
         for task in asyncio.as_completed(tasks):
