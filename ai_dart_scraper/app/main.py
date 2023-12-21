@@ -49,3 +49,11 @@ async def scrape_dart_info():
     scraper = DartInfoScraper()
     await scraper.scrape_dart_info()
     return {"status": "Scraping in progress..."}
+
+
+@app.get("/scrape/dart_finance")
+async def scrape_dart_finance():
+    """OpenDartReader를 이용해 모든 기업의 재무 정보를 수집하는 함수"""
+    scraper = DartFinanceScraper()
+    await scraper.scrape_dart_finance()
+    return {"status": "Scraping in progress..."}

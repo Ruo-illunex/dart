@@ -1,1 +1,2 @@
 from app.scrapers.dart_info_scraper import DartInfoScraper
+from app.scrapers.dart_finance_scraper import DartFinanceScraper

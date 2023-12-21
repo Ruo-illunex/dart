@@ -13,7 +13,7 @@ from app.common.core.utils import get_current_datetime, make_dir
 from app.models_init import CollectDartFinancePydantic
 
 
-class DartInfoScraper:
+class DartFinanceScraper:
     def __init__(self) -> None:
         file_path = FILE_PATHS["log"] + f'scrapers'
         make_dir(file_path)
