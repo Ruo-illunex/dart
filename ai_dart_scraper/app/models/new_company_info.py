@@ -51,7 +51,7 @@ class NewCompanyInfo(BaseCompanies):
     illu_id = Column(String(13))
     is_koscom_scrap_success = Column(Boolean, default=False, comment='코스콤 수집 성공여부')
     create_date = Column(Date, default=date.today, comment='생성일')
-    update_date = Column(Date, default=date.today, comment='수정일')
+    update_date = Column(Date, default=date.today, onupdate=date.today, comment='수정일')
 
     # 인코딩 설정
     __table_args__ = {

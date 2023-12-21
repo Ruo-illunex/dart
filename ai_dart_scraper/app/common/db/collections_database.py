@@ -5,12 +5,13 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+import pandas as pd
 
 from app.config.settings import COLLECTIONS_DB_URL
 from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
-from app.models_init import CollectDart, CollectDartPydantic, CollectDartFinance, CollectDartFinancePydantic
+from app.models_init import CollectDart, CollectDartPydantic, CollectDartFinance, CollectDartFinancePydantic, CodeClass
 from app.common.db.companies_database import CompaniesDatabase
 
 
@@ -42,6 +43,20 @@ class CollectionsDatabase:
             raise e
         finally:
             session.close()
+
+    def get_ksic(self) -> pd.DataFrame:
+        """CodeClass 테이블에서 code_class_id가 0042인 데이터만 조회하는 함수
+        Returns:
+            pd.DataFrame: 조회한 데이터프레임
+        """
+        with self.get_session() as session:
+            try:
+                existing_data = session.query(CodeClass.code_value, CodeClass.code_desc).filter(CodeClass.code_class_id == '0042').all()
+                df = pd.DataFrame(existing_data, columns=['code_value', 'code_desc'])
+                return df
+            except SQLAlchemyError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
 
     def _query_companyids_and_corpcodes_from_collectdart(self) -> list:
         """CollectDart 테이블에서 company_id와 corp_code를 조회하는 함수

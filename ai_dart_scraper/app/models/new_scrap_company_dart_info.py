@@ -34,7 +34,7 @@ class NewScrapCompanyDartInfo(BaseCompanies):
     establishment_date = Column(String(20), comment='설립일')
     acct_month = Column(String(50), comment='재무일자')
     create_date = Column(Date, default=date.today, comment='생성일')
-    update_date = Column(Date, default=date.today, comment='수정일')
+    update_date = Column(Date, default=date.today, onupdate=date.today, comment='수정일')
 
     # 인코딩 설정
     __table_args__ = {

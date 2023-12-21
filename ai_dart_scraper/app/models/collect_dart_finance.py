@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
 from sqlalchemy import Column, Integer, String, BigInteger, Date
@@ -38,6 +38,9 @@ class CollectDartFinance(BaseCollections):
     bfefrmtrm_amount = Column(BigInteger, nullable=True, comment='전전기금액')
     ord = Column(Integer, comment='계정정렬순서')
     currency = Column(String(10), comment='통화 단위')
+    created_at = Column(Date, default=date.today, comment='생성 날짜')
+    update_date = Column(Date, default=date.today, onupdate=date.today, comment='수정일')
+
 
     # 인코딩 설정
     __table_args__ = {
