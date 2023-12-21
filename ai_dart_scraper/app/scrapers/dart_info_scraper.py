@@ -64,7 +64,6 @@ class DartInfoScraper:
     async def _get_company_info(self, corp_code: str, semaphore: asyncio.Semaphore) -> CollectDartPydantic:
         async with semaphore:
             try:
-                await semaphore.acquire()  # 세마포어 획득
                 self._params['corp_code'] = corp_code
                 async with self.session.get(self._url, params=self._params) as response:
                     if response.status != 200:
@@ -73,14 +72,19 @@ class DartInfoScraper:
                         result = None
                     else:
                         company_info = await response.json()
+                        info_msg = f"Success: Get company info of {company_info.get('corp_name')}"
+                        self.logger.info(info_msg)
+                        print(info_msg)
 
-                # company_info = await asyncio.to_thread(self._opdr.company, str(corp_code))
                 status = company_info.pop('status')
                 message = company_info.pop('message')
                 if status == '000':
                     # 기업 정보에 company_id 추가
                     company_info = self.__add_company_id_to_company_info(company_info)
                     result = CollectDartPydantic(**company_info)  # CollectDartPydantic 모델로 변환
+                    info_msg = f"Success: Transformed company info of {company_info.get('corp_name')} and added company_id {company_info.get('company_id')}"
+                    self.logger.info(info_msg)
+                    print(info_msg)
                 else:
                     err_msg = f"Error: {status} {message}"
                     self.logger.error(err_msg)
@@ -94,7 +98,6 @@ class DartInfoScraper:
                 self.logger.error(f"Error: {e}\n{err_msg}")
                 result = None
             finally:
-                semaphore.release()  # 세마포어 해제
                 await self._delay()
             return result
 
@@ -102,14 +105,7 @@ class DartInfoScraper:
         """DART에서 기업 정보를 수집하는 함수. asyncio.Semaphore를 이용해 동시에 5개의 코루틴만 실행"""
         async with aiohttp.ClientSession() as self.session:  # aiohttp.ClientSession을 사용하여 세션 관리
             semaphore = asyncio.Semaphore(5)  # 동시에 5개의 코루틴만 실행
-            tasks = []
-            for corp_code in self._corp_codes_ls:
-                task = asyncio.create_task(
-                    self._get_company_info(corp_code, semaphore),
-                    name=f"{corp_code}"
-                    )
-                tasks.append(task)
-                await self._delay()  # API 요청 간 딜레이
+            tasks = [self._get_company_info(corp_code, semaphore) for corp_code in self._corp_codes_ls]
 
             temp_list = []  # 임시 저장 리스트
             for task in asyncio.as_completed(tasks):

@@ -26,6 +26,7 @@ class CompaniesDatabase:
         )
         self.company_id_dict = {}   # {corporation_num: company_id, ...}
         self._transform_list_to_dict()
+        self.company_ids_from_newscrapcompanydartinfo = self._query_company_ids_from_newscrapcompanydartinfo()  # [company_id, ...]
 
     @contextmanager
     def get_session(self):
@@ -54,4 +55,13 @@ class CompaniesDatabase:
         if existing_data:
             for data in existing_data:
                 self.company_id_dict[data[1]] = data[0]
+
+    def _query_company_ids_from_newscrapcompanydartinfo(self) -> list:
+        with self.get_session() as session:
+            try:
+                existing_data = session.query(NewScrapCompanyDartInfo.company_id).all()
+                return [data[0] for data in existing_data]    # [company_id, ...]
+            except SQLAlchemyError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
 

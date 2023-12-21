@@ -11,6 +11,7 @@ from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
 from app.models_init import CollectDart, CollectDartPydantic, CollectDartFinance, CollectDartFinancePydantic
+from app.common.db.companies_database import CompaniesDatabase
 
 
 class CollectionsDatabase:
@@ -26,6 +27,8 @@ class CollectionsDatabase:
         )
         self.compids_and_corpcodes = self._query_companyids_and_corpcodes_from_collectdart()
         self.last_queried_id_collectdart = None
+        self._companies_db = CompaniesDatabase()
+        self._company_ids_from_newscrapcompanydartinfo = self._companies_db.company_ids_from_newscrapcompanydartinfo    # [company_id, ...]
 
     @contextmanager
     def get_session(self):
@@ -47,7 +50,9 @@ class CollectionsDatabase:
         """
         with self.get_session() as session:
             try:
-                existing_data = session.query(CollectDart.company_id, CollectDart.corp_code).all()
+                existing_data = session.query(CollectDart.company_id, CollectDart.corp_code).filter(
+                    CollectDart.company_id.in_(self._company_ids_from_newscrapcompanydartinfo)
+                ).all()
                 return existing_data
             except SQLAlchemyError as e:
                 err_msg = traceback.format_exc()
