@@ -91,8 +91,8 @@ class DartInfoScraper:
             return result
 
     async def scrape_dart_info(self) -> None:
-        """DART에서 기업 정보를 수집하는 함수. 100개의 데이터가 모일 때마다 데이터베이스에 저장합니다."""
-        semaphore = asyncio.Semaphore(10)  # 동시에 5개의 코루틴만 실행
+        """DART에서 기업 정보를 수집하는 함수. asyncio.Semaphore를 이용해 동시에 5개의 코루틴만 실행"""
+        semaphore = asyncio.Semaphore(5)  # 동시에 5개의 코루틴만 실행
         tasks = [self._get_company_info(corp_code, semaphore) for corp_code in self._corp_codes_ls]
 
         temp_list = []  # 임시 저장 리스트

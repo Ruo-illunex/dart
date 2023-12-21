@@ -28,9 +28,8 @@ class DartFinanceScraper:
 
         self._url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json'
         self._params = {'crtfc_key': DART_API_KEY}
-        # 현재 연도를 제외하고 최근 5년을 계산하여 리스트에 저장
-        # 현재 연도가 4월이 지났을 경우에는 지난 연도를 포함하여 최근 5년을 계산
-        self._bsns_year_ls = [str(datetime.datetime.now().year - (i+1)) for i in range(5) if datetime.datetime.now().month > 4 or i > 0]
+        self.target_year = datetime.datetime.now().year - 1 if datetime.datetime.now().month > 4 else datetime.datetime.now().year - 2
+        self._bsns_year_ls = [str(self.target_year), str(self.target_year - 3)]
         self._reprt_code_ls = [
             '11011',    # 사업보고서
             '11012',    # 반기보고서
@@ -42,7 +41,7 @@ class DartFinanceScraper:
             'OFS'       # 재무제표 or 별도재무제표
             ]
         self._batch_size = 300  # 한 번에 저장할 데이터 개수
-        self._delay_time = 1.5  # OpenDartReader API 호출 시 딜레이 - 초 단위
+        self._delay_time = 2.3  # OpenDartReader API 호출 시 딜레이 - 초 단위
 
     async def _delay(self):
         await asyncio.sleep(self._delay_time)
@@ -102,7 +101,7 @@ class DartFinanceScraper:
 
     async def scrape_dart_finance(self) -> None:
         """DART에서 재무 정보를 수집하는 함수"""
-        semaphore = asyncio.Semaphore(10)
+        semaphore = asyncio.Semaphore(5)
         tasks = [self._get_company_finance_info_list(corp_code, company_id, semaphore) for company_id, corp_code in self._compids_and_corpcodes]
         
         temp_list = []
