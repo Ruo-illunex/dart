@@ -25,7 +25,7 @@ class DartFinanceScraper:
         )
         self._collections_db = CollectionsDatabase()
         self._companies_db = CompaniesDatabase()
-        self._compids_and_corpcodes = self._collections_db.compids_and_corpcodes    # [(company_id, corp_code), ...]
+        self._compids_and_corpcodes = self._collections_db.get_companyids_and_corpcodes()    # [(company_id, corp_code), ...]
 
         self._url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json'
         self._params = {'crtfc_key': DART_API_KEY}

@@ -26,7 +26,6 @@ class CollectionsDatabase:
             "collections_database",
             file_path
         )
-        self.compids_and_corpcodes = self._query_companyids_and_corpcodes_from_collectdart()
         self.last_queried_id_collectdart = None
         self._companies_db = CompaniesDatabase()
         self._company_ids_from_newscrapcompanydartinfo = self._companies_db.company_ids_from_newscrapcompanydartinfo    # [company_id, ...]
@@ -58,7 +57,7 @@ class CollectionsDatabase:
                 err_msg = traceback.format_exc()
                 self.logger.error(f"Error: {e}\n{err_msg}")
 
-    def _query_companyids_and_corpcodes_from_collectdart(self) -> list:
+    def get_companyids_and_corpcodes(self) -> list:
         """CollectDart 테이블에서 company_id와 corp_code를 조회하는 함수
         Returns:
             list: [(company_id, corp_code), ...]
