@@ -4,6 +4,7 @@ import datetime
 from typing import List
 
 import aiohttp
+from pydantic import ValidationError
 
 from app.common.db.collections_database import CollectionsDatabase
 from app.common.db.companies_database import CompaniesDatabase
@@ -43,85 +44,75 @@ class DartFinanceScraper:
         self._batch_size = 300  # 한 번에 저장할 데이터 개수
         self._delay_time = 2.3  # OpenDartReader API 호출 시 딜레이 - 초 단위
 
+    async def __aenter__(self):
+        self.session = await aiohttp.ClientSession().__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
+
     async def _delay(self):
         await asyncio.sleep(self._delay_time)
 
-    async def _get_company_finance_info_list(self, corp_code: str, company_id: int, semaphore: asyncio.Semaphore) -> List[CollectDartFinancePydantic]:
-        """OpenDartReader를 이용해 기업의 재무 정보를 가져오는 함수
-        Args:
-            corp_code (str): 기업의 고유번호
-            semaphore (asyncio.Semaphore): asyncio.Semaphore 객체
-        Returns:
-            List[CollectDartFinancePydantic]: 기업의 재무 정보 리스트
-        """
-        async with semaphore:
-            self._params['corp_code'] = corp_code
-            company_finance_info_list = []
-            for bsns_year in self._bsns_year_ls:
-                self._params['bsns_year'] = bsns_year
-                try:
-                    for reprt_code in self._reprt_code_ls:
-                        self._params['reprt_code'] = reprt_code
-                        try:
-                            for fs_div in self._fs_div_ls:
-                                try:
-                                    self._params['fs_div'] = fs_div
-                                    async with aiohttp.ClientSession() as session:
-                                        async with session.get(self._url, params=self._params) as response:
-                                            if response.status != 200:
-                                                err_msg = f"Error: {response.status} {response.reason}"
-                                                self.logger.error(err_msg)
-                                            else:
-                                                data = await response.json()
-                                                status = data.get('status')
-                                                message = data.get('message')
-                                                if data.get('status') == '000':
-                                                    for info in data.get('list'):
-                                                        info['company_id'] = company_id
-                                                        info['fs_div'] = fs_div
-                                                        info['fs_nm'] = '연결재무제표' if fs_div == 'CFS' else '별도재무제표'
-                                                        company_finance_info_list.append(CollectDartFinancePydantic(**info))
-                                                else:
-                                                    err_msg = f"Error: {status} {message}"
-                                                    self.logger.error(err_msg)
-                                                    print(err_msg)
-                                except Exception as e:
-                                    err_msg = traceback.format_exc()
-                                    self.logger.error(f"Error: {e}\n{err_msg}")
-                                    continue
-                        except Exception as e:
-                            err_msg = traceback.format_exc()
-                            self.logger.error(f"Error: {e}\n{err_msg}")
-                            continue
-                except Exception as e:
-                    err_msg = traceback.format_exc()
-                    self.logger.error(f"Error: {e}\n{err_msg}")
-                    continue
-            return company_finance_info_list
+    async def _get_company_finance_info(self, session, company_id, corp_code, bsns_year, reprt_code, fs_div, semaphore) -> None:
+        await semaphore.acquire()  # 세마포어 획득
+        self._params.update({
+            'corp_code': corp_code,
+            'bsns_year': bsns_year,
+            'reprt_code': reprt_code,
+            'fs_div': fs_div
+        })
+
+        try:
+            async with session.get(self._url, params=self._params) as response:
+                if response.status != 200:
+                    err_msg = f"Error: {response.status} {response.reason}"
+                    self.logger.error(err_msg)
+                else:
+                    data = await response.json()
+                    status = data.get('status')
+                    message = data.get('message')
+                    if status == '000':
+                        company_finance_info_list = []
+                        for info in data.get('list'):
+                            try:
+                                info['company_id'] = company_id
+                                info['fs_div'] = fs_div
+                                info['fs_nm'] = '연결재무제표' if fs_div == 'CFS' else '별도재무제표'
+                                finance_info = CollectDartFinancePydantic(**info)
+                                company_finance_info_list.append(finance_info)
+                            except ValidationError as e:
+                                err_msg = f"Validation Error for {info}: {e}"
+                                self.logger.error(err_msg)
+                        if company_finance_info_list:
+                            self._collections_db.bulk_upsert_data_collectdartfinance(company_finance_info_list)
+                            success_msg = f"Saved {len(company_finance_info_list)} data for company ID {company_id}"
+                            self.logger.info(success_msg)
+                    else:
+                        err_msg = f"Error: {status} {message}"
+                        self.logger.error(err_msg)
+        except aiohttp.ClientError as e:
+            err_msg = f"ClientError: {e}"
+            self.logger.error(err_msg)
+        except Exception as e:
+            err_msg = traceback.format_exc()
+            self.logger.error(f"Unhandled exception: {err_msg}")
+        finally:
+            semaphore.release()
+            await self._delay()
 
     async def scrape_dart_finance(self) -> None:
-        """DART에서 재무 정보를 수집하는 함수"""
-        semaphore = asyncio.Semaphore(5)
-        tasks = [self._get_company_finance_info_list(str(corp_code), int(company_id), semaphore) for company_id, corp_code in self._compids_and_corpcodes]
-        
-        temp_list = []
-        for task in asyncio.as_completed(tasks):
-            company_finance_info_list = await task
-            if company_finance_info_list:
-                temp_list.extend(company_finance_info_list)
-                print(f"temp_list: {len(temp_list)}")
-                
-                # 일정 개수 이상이 되면 데이터베이스에 저장
-                if len(temp_list) >= self._batch_size:
-                    self._collections_db.bulk_upsert_data_collectdartfinance(temp_list)
-                    success_msg = f"Saved {len(temp_list)} data"
-                    self.logger.info(success_msg)
-                    print(success_msg)
-                    temp_list = []  # 저장 후 리스트 초기화
+        async with aiohttp.ClientSession() as self.session:  # aiohttp.ClientSession을 사용하여 세션 관리
+            semaphore = asyncio.Semaphore(5)  # 동시 요청 수를 제어하는 세마포어
+            tasks = []
+            for company_id, corp_code in self._compids_and_corpcodes:
+                for bsns_year in self._bsns_year_ls:
+                    for reprt_code in self._reprt_code_ls:
+                        for fs_div in self._fs_div_ls:
+                            task = asyncio.create_task(
+                                self._get_company_finance_info(self.session, company_id, corp_code, bsns_year, reprt_code, fs_div, semaphore),
+                                name=f"{company_id}_{bsns_year}_{reprt_code}_{fs_div}")
+                            tasks.append(task)
+                            await self._delay()  # API 요청 간 딜레이
 
-        # 남은 데이터가 있다면 마지막으로 저장
-        if temp_list:
-            self._collections_db.bulk_upsert_data_collectdartfinance(temp_list)
-            success_msg = f"Saved {len(temp_list)} data"
-            self.logger.info(success_msg)
-            print(success_msg)
+            await asyncio.gather(*tasks)  # 모든 태스크가 완료될 때까지 대기

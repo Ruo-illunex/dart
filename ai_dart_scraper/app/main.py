@@ -46,14 +46,15 @@ async def health_check():
 @app.get("/scrape/dart_info")
 async def scrape_dart_info():
     """OpenDartReader를 이용해 모든 기업의 기업 정보를 수집하는 함수"""
-    scraper = DartInfoScraper()
-    await scraper.scrape_dart_info()
+    async with DartInfoScraper() as scraper:
+        asyncio.create_task(scraper.scrape_dart_info())
     return {"status": "Scraping in progress..."}
 
 
 @app.get("/scrape/dart_finance")
 async def scrape_dart_finance():
     """OpenDartReader를 이용해 모든 기업의 재무 정보를 수집하는 함수"""
-    scraper = DartFinanceScraper()
-    await scraper.scrape_dart_finance()
+    async with DartFinanceScraper() as scraper:
+        asyncio.create_task(scraper.scrape_dart_finance())
     return {"status": "Scraping in progress..."}
+

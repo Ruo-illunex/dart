@@ -31,6 +31,14 @@ class DartInfoScraper:
         self._batch_size = 100  # 한 번에 저장할 데이터 개수
         self._delay_time = 1.5  # OpenDartReader API 호출 시 딜레이 - 초 단위
 
+    # aiohttp.ClientSession을 인스턴스 수준에서 초기화
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.close()
+
     def _get_corp_code_list(self) -> list:
         """OpenDartReader를 이용해 모든 기업의 고유번호 리스트를 가져오는 함수
         Returns:
@@ -56,15 +64,15 @@ class DartInfoScraper:
     async def _get_company_info(self, corp_code: str, semaphore: asyncio.Semaphore) -> CollectDartPydantic:
         async with semaphore:
             try:
+                await semaphore.acquire()  # 세마포어 획득
                 self._params['corp_code'] = corp_code
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(self._url, params=self._params) as response:
-                        if response.status != 200:
-                            err_msg = f"Error: {response.status} {response.reason}"
-                            self.logger.error(err_msg)
-                            result = None
-                        else:
-                            company_info = await response.json()
+                async with self.session.get(self._url, params=self._params) as response:
+                    if response.status != 200:
+                        err_msg = f"Error: {response.status} {response.reason}"
+                        self.logger.error(err_msg)
+                        result = None
+                    else:
+                        company_info = await response.json()
 
                 # company_info = await asyncio.to_thread(self._opdr.company, str(corp_code))
                 status = company_info.pop('status')
@@ -86,33 +94,41 @@ class DartInfoScraper:
                 self.logger.error(f"Error: {e}\n{err_msg}")
                 result = None
             finally:
+                semaphore.release()  # 세마포어 해제
                 await self._delay()
-
             return result
 
     async def scrape_dart_info(self) -> None:
         """DART에서 기업 정보를 수집하는 함수. asyncio.Semaphore를 이용해 동시에 5개의 코루틴만 실행"""
-        semaphore = asyncio.Semaphore(5)  # 동시에 5개의 코루틴만 실행
-        tasks = [self._get_company_info(corp_code, semaphore) for corp_code in self._corp_codes_ls]
+        async with aiohttp.ClientSession() as self.session:  # aiohttp.ClientSession을 사용하여 세션 관리
+            semaphore = asyncio.Semaphore(5)  # 동시에 5개의 코루틴만 실행
+            tasks = []
+            for corp_code in self._corp_codes_ls:
+                task = asyncio.create_task(
+                    self._get_company_info(corp_code, semaphore),
+                    name=f"{corp_code}"
+                    )
+                tasks.append(task)
+                await self._delay()  # API 요청 간 딜레이
 
-        temp_list = []  # 임시 저장 리스트
-        for task in asyncio.as_completed(tasks):
-            company_info = await task
-            if company_info:
-                temp_list.append(company_info)
-                print(f"temp_list: {len(temp_list)}")
+            temp_list = []  # 임시 저장 리스트
+            for task in asyncio.as_completed(tasks):
+                company_info = await task
+                if company_info:
+                    temp_list.append(company_info)
+                    print(f"temp_list: {len(temp_list)}")
 
-                # temp_list에 100개의 데이터가 모이면 데이터베이스에 저장
-                if len(temp_list) == self._batch_size:
-                    self._collections_db.bulk_upsert_data_collectdart(temp_list)
-                    success_msg = f"Saved {len(temp_list)} data"
-                    self.logger.info(success_msg)
-                    print(success_msg)
-                    temp_list = []  # 저장 후 리스트 초기화
+                    # temp_list에 100개의 데이터가 모이면 데이터베이스에 저장
+                    if len(temp_list) == self._batch_size:
+                        self._collections_db.bulk_upsert_data_collectdart(temp_list)
+                        success_msg = f"Saved {len(temp_list)} data"
+                        self.logger.info(success_msg)
+                        print(success_msg)
+                        temp_list = []  # 저장 후 리스트 초기화
 
-        # 남은 데이터가 있다면 마지막으로 저장
-        if temp_list:
-            self._collections_db.bulk_upsert_data_collectdart(temp_list)
-            success_msg = f"Saved {len(temp_list)} data"
-            self.logger.info(success_msg)
-            print(success_msg)
+            # 남은 데이터가 있다면 마지막으로 저장
+            if temp_list:
+                self._collections_db.bulk_upsert_data_collectdart(temp_list)
+                success_msg = f"Saved {len(temp_list)} data"
+                self.logger.info(success_msg)
+                print(success_msg)
