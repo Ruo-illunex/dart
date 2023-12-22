@@ -15,7 +15,7 @@ from app.models_init import CollectDartFinancePydantic
 
 
 class DartFinanceScraper:
-    def __init__(self) -> None:
+    def __init__(self, bsns_year:int = None) -> None:
         file_path = FILE_PATHS["log"] + f'scrapers'
         make_dir(file_path)
         file_path += f'/dart_finance_scraper_{get_current_datetime()}.log'
@@ -30,7 +30,10 @@ class DartFinanceScraper:
         self._url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json'
         self._params = {'crtfc_key': DART_API_KEY}
         self.target_year = datetime.datetime.now().year - 1 if datetime.datetime.now().month > 4 else datetime.datetime.now().year - 2
-        self._bsns_year_ls = [str(self.target_year), str(self.target_year - 3)]
+        if bsns_year:
+            self._bsns_year_ls = [str(bsns_year)]
+        else:
+            self._bsns_year_ls = [str(self.target_year), str(self.target_year - 3)]
         self._reprt_code_ls = [
             '11011',    # 사업보고서
             '11012',    # 반기보고서
