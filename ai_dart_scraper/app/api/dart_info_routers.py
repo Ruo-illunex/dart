@@ -64,7 +64,7 @@ def get_company_info_by_biznum_endpoint(bizNum: str):
     Returns:
         List[NewCompanyInfo]: 기업 정보
     """
-    if not bizNum:
+    if bizNum == '':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="사업자등록번호를 입력해주세요.")
     try:
         data = get_company_info(bizNum)
@@ -86,7 +86,7 @@ def get_company_info_by_corpnum_endpoint(corpNum: str):
     Returns:
         List[NewCompanyInfo]: 기업 정보
     """
-    if not corpNum:
+    if corpNum == '':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="법인등록번호를 입력해주세요.")
     try:
         data = get_company_info(corpNum)
@@ -108,7 +108,7 @@ def get_company_info_by_companyid_endpoint(companyId: str):
     Returns:
         List[NewCompanyInfo]: 기업 정보
     """
-    if not companyId:
+    if companyId == '':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="기업 ID를 입력해주세요.")
     try:
         data = get_company_info(companyId)

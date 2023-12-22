@@ -24,8 +24,7 @@ class DartInfoPreprocessing:
         # code_value = A01100 -> code: A, industry_code: 01100 분리 -> industry_code: 011로 뒤에 0 제거 (주의 앞에 0은 제거하지 않음)
         self._ksic_df['code'] = self._ksic_df['code_value'].apply(lambda x: x[0])   # A
         self._ksic_df['industry_code'] = self._ksic_df['code_value'].apply(lambda x: x[1:]) # 01100
-        self._ksic_df['industry_code'] = self._ksic_df['industry_code'].apply(lambda x: x.lstrip('0'))  # 011
-        self._ksic_df.drop(columns=['code_value'], inplace=True)
+        self._ksic_df['industry_code'] = self._ksic_df['industry_code'].apply(lambda x: x.rstrip('0'))  # 011
 
     def _search_ksic(self, industry_code: str) -> list:
         """업종코드를 통해 업종명을 찾는 함수
@@ -34,11 +33,12 @@ class DartInfoPreprocessing:
         Returns:
             list: [code, industry_code, code_desc, representation_desc]
         """
-        result = self._ksic_df[self._ksic_df['industry_code'] == industry_code].values.tolist() # [[code, industry_code, code_desc]]
-        representation_code = result[0][0] + '00000'
+        result = self._ksic_df[self._ksic_df['industry_code'] == industry_code].values.tolist() # [[code_value, code_desc, code, industry_code], ...]
+        representation_code = result[0][2] + '00000'
         representation_desc = self._ksic_df[self._ksic_df['code_value'] == representation_code]['code_desc'].values[0]
         if result:
-            return result[0] + [representation_desc]
+            result = result[0] + [representation_desc]
+            return result
         else:
             return None
 
@@ -51,10 +51,10 @@ class DartInfoPreprocessing:
         """
         # 기업 정보를 DB에 저장하기 위해 전처리
         listing_market_dict = {
-            'Y': (1, '코스피'),
-            'K': (2, '코스닥'),
-            'N': (3, '코넥스'),
-            'E': (9, '대상아님')
+            'Y': ('1', '코스피'),
+            'K': ('2', '코스닥'),
+            'N': ('3', '코넥스'),
+            'E': ('9', '대상아님')
             }
         ksic = self._search_ksic(data.induty_code)    # [code, industry_code, code_desc]
         company_info = NewCompanyInfoPydantic(
@@ -66,10 +66,10 @@ class DartInfoPreprocessing:
             representation_name=data.ceo_nm,
             establishment_date=data.est_dt,
             acct_month=data.acc_mt,
-            business_condition_code=ksic[0] if ksic else None,
-            business_condition_desc=ksic[3] if ksic else None,
-            business_category_code=ksic[0]+ksic[1] if ksic else None,
-            business_category_desc=ksic[2] if ksic else None,
+            business_condition_code=ksic[2] if ksic else None,
+            business_condition_desc=ksic[-1] if ksic else None,
+            business_category_code=ksic[2]+ksic[3] if ksic else None,
+            business_category_desc=ksic[1] if ksic else None,
             home_page_url=data.hm_url,
             tel = data.phn_no,
             fax = data.fax_no,
