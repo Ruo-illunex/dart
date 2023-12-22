@@ -41,7 +41,6 @@ class DartFinanceScraper:
             'CFS',      # 연결재무제표
             'OFS'       # 재무제표 or 별도재무제표
             ]
-        self._batch_size = 300  # 한 번에 저장할 데이터 개수
         self._delay_time = 2.3  # OpenDartReader API 호출 시 딜레이 - 초 단위
 
     async def __aenter__(self):
