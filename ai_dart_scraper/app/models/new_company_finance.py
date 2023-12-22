@@ -41,7 +41,7 @@ class NewCompanyFinance(BaseCompanies):
     short_term_loan = Column(String(50), default='', nullable=True, comment='단기차입금')
     net_working_capital = Column(String(50), default='', nullable=True, comment='순운전자본')
     selling_general_administrative_expenses = Column(String(50), default='', nullable=True, comment='매출액 판매관리비')
-    created_at = Column(Date, default=date.today)
+    create_date = Column(Date, default=date.today)
     update_date = Column(Date, default=date.today, onupdate=date.today)
     finance_timestamp = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -89,3 +89,4 @@ class NewCompanyFinancePydantic(BaseModel):
     
     class Config:
         from_attributes = True
+        orm_mode = True

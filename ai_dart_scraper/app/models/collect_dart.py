@@ -32,7 +32,7 @@ class CollectDart(BaseCollections):
     induty_code = Column(String(50), comment='산업 코드')
     est_dt = Column(String(50), comment='설립 날짜')
     acc_mt = Column(String(10), comment='회계 월')
-    created_at = Column(Date, default=date.today, comment='생성 날짜')
+    create_date = Column(Date, default=date.today, comment='생성 날짜')
     update_date = Column(Date, default=date.today, onupdate=date.today, comment='수정일')
 
     # 인코딩 설정
@@ -67,3 +67,4 @@ class CollectDartPydantic(BaseModel):
 
     class Config:
         from_attributes = True
+        orm_mode = True

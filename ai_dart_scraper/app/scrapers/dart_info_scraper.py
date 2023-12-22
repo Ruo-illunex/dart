@@ -17,7 +17,7 @@ class DartInfoScraper:
         file_path = FILE_PATHS["log"] + f'scrapers'
         make_dir(file_path)
         file_path += f'/dart_info_scraper_{get_current_datetime()}.log'
-        self.logger = setup_logger(
+        self._logger = setup_logger(
             "dart_info_scraper",
             file_path
         )
@@ -68,12 +68,12 @@ class DartInfoScraper:
                 async with self.session.get(self._url, params=self._params) as response:
                     if response.status != 200:
                         err_msg = f"Error: {response.status} {response.reason}"
-                        self.logger.error(err_msg)
+                        self._logger.error(err_msg)
                         result = None
                     else:
                         company_info = await response.json()
                         info_msg = f"Success: Get company info of {company_info.get('corp_name')}"
-                        self.logger.info(info_msg)
+                        self._logger.info(info_msg)
                         print(info_msg)
 
                 status = company_info.pop('status')
@@ -83,19 +83,19 @@ class DartInfoScraper:
                     company_info = self.__add_company_id_to_company_info(company_info)
                     result = CollectDartPydantic(**company_info)  # CollectDartPydantic 모델로 변환
                     info_msg = f"Success: Transformed company info of {company_info.get('corp_name')} and added company_id {company_info.get('company_id')}"
-                    self.logger.info(info_msg)
+                    self._logger.info(info_msg)
                     print(info_msg)
                 else:
                     err_msg = f"Error: {status} {message}"
-                    self.logger.error(err_msg)
+                    self._logger.error(err_msg)
                     result = None
             except ValidationError as e:
                 err_msg = traceback.format_exc()
-                self.logger.error(f"Error: {e}\n{err_msg}")
+                self._logger.error(f"Error: {e}\n{err_msg}")
                 result = None
             except Exception as e:
                 err_msg = traceback.format_exc()
-                self.logger.error(f"Error: {e}\n{err_msg}")
+                self._logger.error(f"Error: {e}\n{err_msg}")
                 result = None
             finally:
                 await self._delay()
@@ -118,7 +118,7 @@ class DartInfoScraper:
                     if len(temp_list) == self._batch_size:
                         self._collections_db.bulk_upsert_data_collectdart(temp_list)
                         success_msg = f"Saved {len(temp_list)} data"
-                        self.logger.info(success_msg)
+                        self._logger.info(success_msg)
                         print(success_msg)
                         temp_list = []  # 저장 후 리스트 초기화
 
@@ -126,5 +126,5 @@ class DartInfoScraper:
             if temp_list:
                 self._collections_db.bulk_upsert_data_collectdart(temp_list)
                 success_msg = f"Saved {len(temp_list)} data"
-                self.logger.info(success_msg)
+                self._logger.info(success_msg)
                 print(success_msg)

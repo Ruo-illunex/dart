@@ -1,17 +1,17 @@
 import traceback
 from typing import List
 from contextlib import contextmanager
+from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-import pandas as pd
 
 from app.config.settings import COLLECTIONS_DB_URL
 from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
-from app.models_init import CollectDart, CollectDartPydantic, CollectDartFinance, CollectDartFinancePydantic, CodeClass
+from app.models_init import CollectDart, CollectDartPydantic, CollectDartFinance, CollectDartFinancePydantic
 from app.common.db.companies_database import CompaniesDatabase
 
 
@@ -42,20 +42,6 @@ class CollectionsDatabase:
             raise e
         finally:
             session.close()
-
-    def get_ksic(self) -> pd.DataFrame:
-        """CodeClass 테이블에서 code_class_id가 0042인 데이터만 조회하는 함수
-        Returns:
-            pd.DataFrame: 조회한 데이터프레임
-        """
-        with self.get_session() as session:
-            try:
-                existing_data = session.query(CodeClass.code_value, CodeClass.code_desc).filter(CodeClass.code_class_id == '0042').all()
-                df = pd.DataFrame(existing_data, columns=['code_value', 'code_desc'])
-                return df
-            except SQLAlchemyError as e:
-                err_msg = traceback.format_exc()
-                self.logger.error(f"Error: {e}\n{err_msg}")
 
     def get_companyids_and_corpcodes(self) -> list:
         """CollectDart 테이블에서 company_id와 corp_code를 조회하는 함수
@@ -135,35 +121,58 @@ class CollectionsDatabase:
                 
             session.commit()
 
-    def query_collectdart(self, batchsize: int = 1000) -> list:
-        """데이터베이스에서 데이터를 조회하는 함수
-        Args:
-            batchsize (int, optional): 조회할 데이터의 개수. Defaults to 1000.
-        Returns:
-            list: 조회한 데이터 리스트
-        """
+    def query_collectdart(self, biz_num=None, corp_num=None, company_id=None) -> Optional[CollectDartPydantic]:
+        """데이터베이스에서 데이터를 조회하는 함수"""
         with self.get_session() as session:
             try:
-                # 마지막으로 조회한 id가 있으면 해당 id보다 큰 id를 가진 데이터를 조회
-                if self.last_queried_id_collectdart:
-                    existing_data = session.query(CollectDart).filter(
-                        CollectDart.id > self.last_queried_id_collectdart
-                    ).limit(batchsize).all()
-                    info_msg = f"Last queried id: {self.last_queried_id_collectdart}"
-                    self.logger.info(info_msg)
-                    print(info_msg)
-                # 마지막으로 조회한 id가 없으면 처음부터 batchsize만큼 데이터를 조회
-                else:
-                    existing_data = session.query(CollectDart).limit(batchsize).all()
-                    info_msg = "No last queried id"
-                    self.logger.info(info_msg)
-                    print(info_msg)
-
-                # 마지막으로 조회한 id를 업데이트
+                assert biz_num or corp_num or company_id, "biz_num, corp_num, company_id 중 하나는 필수로 입력해야 합니다."
+                if biz_num:
+                    existing_data = session.query(CollectDart).filter(CollectDart.bizr_no == biz_num).first()
+                elif corp_num:
+                    existing_data = session.query(CollectDart).filter(CollectDart.jurir_no == corp_num).first()
+                elif company_id:
+                    existing_data = session.query(CollectDart).filter(CollectDart.company_id == company_id).first()
                 if existing_data:
-                    self.last_queried_id_collectdart = existing_data[-1].id
-                return existing_data
+                    # id, create_date, update_date를 제외한 모든 필드를 CollectDartPydantic 모델로 변환
+                    return CollectDartPydantic.from_orm(existing_data)
+            except AssertionError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
+                return None
             except Exception as e:
                 err_msg = traceback.format_exc()
                 self.logger.error(f"Error: {e}\n{err_msg}")
-                return []
+                return None
+
+    # def query_collectdart(self, batchsize: int = 1000) -> list:
+    #     """데이터베이스에서 데이터를 조회하는 함수
+    #     Args:
+    #         batchsize (int, optional): 조회할 데이터의 개수. Defaults to 1000.
+    #     Returns:
+    #         list: 조회한 데이터 리스트
+    #     """
+    #     with self.get_session() as session:
+    #         try:
+    #             # 마지막으로 조회한 id가 있으면 해당 id보다 큰 id를 가진 데이터를 조회
+    #             if self.last_queried_id_collectdart:
+    #                 existing_data = session.query(CollectDart).filter(
+    #                     CollectDart.id > self.last_queried_id_collectdart
+    #                 ).limit(batchsize).all()
+    #                 info_msg = f"Last queried id: {self.last_queried_id_collectdart}"
+    #                 self.logger.info(info_msg)
+    #                 print(info_msg)
+    #             # 마지막으로 조회한 id가 없으면 처음부터 batchsize만큼 데이터를 조회
+    #             else:
+    #                 existing_data = session.query(CollectDart).limit(batchsize).all()
+    #                 info_msg = "No last queried id"
+    #                 self.logger.info(info_msg)
+    #                 print(info_msg)
+
+    #             # 마지막으로 조회한 id를 업데이트
+    #             if existing_data:
+    #                 self.last_queried_id_collectdart = existing_data[-1].id
+    #             return existing_data
+    #         except Exception as e:
+    #             err_msg = traceback.format_exc()
+    #             self.logger.error(f"Error: {e}\n{err_msg}")
+    #             return []

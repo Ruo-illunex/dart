@@ -38,7 +38,7 @@ class CollectDartFinance(BaseCollections):
     bfefrmtrm_amount = Column(String(100), nullable=True, comment='전전기금액')
     ord = Column(String(10), comment='계정정렬순서')
     currency = Column(String(10), comment='통화 단위')
-    created_at = Column(Date, default=date.today, comment='생성 날짜')
+    create_date = Column(Date, default=date.today, comment='생성 날짜')
     update_date = Column(Date, default=date.today, onupdate=date.today, comment='수정일')
 
 
@@ -80,3 +80,4 @@ class CollectDartFinancePydantic(BaseModel):
 
     class Config:
         from_attributes = True
+        orm_mode = True

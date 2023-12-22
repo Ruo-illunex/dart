@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+import pandas as pd
 
 from app.config.settings import COMPANIES_DB_URL
 from app.models_init import NewCompanyInfo, NewScrapCompanyDartInfo, CodeClass
@@ -40,6 +41,20 @@ class CompaniesDatabase:
             raise e
         finally:
             session.close()
+
+    def get_ksic(self) -> pd.DataFrame:
+        """CodeClass 테이블에서 code_class_id가 0042인 데이터만 조회하는 함수
+        Returns:
+            pd.DataFrame: 조회한 데이터프레임 -> [code_value, code_desc]
+        """
+        with self.get_session() as session:
+            try:
+                existing_data = session.query(CodeClass.code_value, CodeClass.code_desc).filter(CodeClass.code_class_id == '0042').all()
+                df = pd.DataFrame(existing_data, columns=['code_value', 'code_desc'])
+                return df
+            except SQLAlchemyError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
 
     def _query_ids_and_corpnums_from_newscrapcompanydartinfo(self) -> list:
         with self.get_session() as session:

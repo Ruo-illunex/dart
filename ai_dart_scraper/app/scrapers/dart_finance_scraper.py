@@ -1,7 +1,6 @@
 import asyncio
 import traceback
 import datetime
-from typing import List
 
 import aiohttp
 from pydantic import ValidationError
@@ -19,7 +18,7 @@ class DartFinanceScraper:
         file_path = FILE_PATHS["log"] + f'scrapers'
         make_dir(file_path)
         file_path += f'/dart_finance_scraper_{get_current_datetime()}.log'
-        self.logger = setup_logger(
+        self._logger = setup_logger(
             "dart_finance_scraper",
             file_path
         )
@@ -71,7 +70,7 @@ class DartFinanceScraper:
                 async with session.get(self._url, params=self._params) as response:
                     if response.status != 200:
                         err_msg = f"Error: {response.status} {response.reason}"
-                        self.logger.error(err_msg)
+                        self._logger.error(err_msg)
                     else:
                         data = await response.json()
                         status = data.get('status')
@@ -86,25 +85,25 @@ class DartFinanceScraper:
                                     finance_info = CollectDartFinancePydantic(**info)
                                     company_finance_info_list.append(finance_info)
                                     info_msg = f"Success: Get company finance info of {info.get('corp_code')} and added to list"
-                                    self.logger.info(info_msg)
+                                    self._logger.info(info_msg)
                                 except ValidationError as e:
                                     err_msg = f"Validation Error for {info}: {e}"
-                                    self.logger.error(err_msg)
+                                    self._logger.error(err_msg)
                             if company_finance_info_list:
                                 self._collections_db.bulk_upsert_data_collectdartfinance(company_finance_info_list)
                                 success_msg = f"Saved {len(company_finance_info_list)} data for company ID {company_id} and corp_code {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
-                                self.logger.info(success_msg)
+                                self._logger.info(success_msg)
                                 print(success_msg)
                         else:
                             err_msg = f"Error: {status} {message} for corp_code {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
-                            self.logger.error(err_msg)
+                            self._logger.error(err_msg)
                             print(err_msg)
             except aiohttp.ClientError as e:
                 err_msg = f"ClientError: {e}"
-                self.logger.error(err_msg)
+                self._logger.error(err_msg)
             except Exception as e:
                 err_msg = traceback.format_exc()
-                self.logger.error(f"Unhandled exception: {err_msg}")
+                self._logger.error(f"Unhandled exception: {err_msg}")
             finally:
                 await self._delay()
 

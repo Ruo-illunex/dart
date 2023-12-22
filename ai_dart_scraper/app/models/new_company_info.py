@@ -64,15 +64,16 @@ class NewCompanyInfoPydantic(BaseModel):
     """기업 정보 Pydantic 모델"""
 
     # 모델 필드 정의
+    id: int
     biz_num: Optional[str] = None
     corporation_num: Optional[str] = None
     company_name: Optional[str] = None
     real_company_name: Optional[str] = None
     company_state: Optional[str] = None
     representation_name: Optional[str] = None
-    company_type: Optional[str] = None
-    company_size: Optional[str] = None
-    employee_count: Optional[str] = None
+    # company_type: Optional[str] = None
+    # company_size: Optional[str] = None
+    # employee_count: Optional[str] = None
     establishment_date: Optional[str] = None
     acct_month: Optional[str] = None
     business_condition_code: Optional[str] = None
@@ -81,25 +82,26 @@ class NewCompanyInfoPydantic(BaseModel):
     business_category_desc: Optional[str] = None
     homepage: Optional[str] = None
     tel: Optional[str] = None
-    email: Optional[str] = None
+    # email: Optional[str] = None
     fax: Optional[str] = None
     address: Optional[str] = None
-    zip_code: Optional[str] = None
-    sales: Optional[str] = None
-    sales_year: Optional[str] = None
-    major_product: Optional[str] = None
-    head_office: Optional[str] = None
-    category: Optional[str] = None
-    keyword: Optional[str] = None
-    visible: Optional[bool] = None
-    description: Optional[str] = None
-    origin_id: Optional[int] = None
+    # zip_code: Optional[str] = None
+    # sales: Optional[str] = None
+    # sales_year: Optional[str] = None
+    # major_product: Optional[str] = None
+    # head_office: Optional[str] = None
+    # category: Optional[str] = None
+    # keyword: Optional[str] = None
+    # visible: Optional[bool] = None
+    # description: Optional[str] = None
+    # origin_id: Optional[int] = None
     listing_market_id: Optional[str] = None
     listing_market_desc: Optional[str] = None
-    country: Optional[str] = None
-    logo_url: Optional[str] = None
-    illu_id: Optional[str] = None
-    is_koscom_scrap_success: Optional[bool] = None
+    # country: Optional[str] = None
+    # logo_url: Optional[str] = None
+    # illu_id: Optional[str] = None
+    # is_koscom_scrap_success: Optional[bool] = None
 
     class Config:
         from_attributes = True
+        orm_mode = True
