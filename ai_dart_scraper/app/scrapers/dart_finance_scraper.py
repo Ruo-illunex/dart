@@ -94,7 +94,7 @@ class DartFinanceScraper:
                                 self.logger.info(success_msg)
                                 print(success_msg)
                         else:
-                            err_msg = f"Error: {status} {message}"
+                            err_msg = f"Error: {status} {message} for corp_code {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
                             self.logger.error(err_msg)
                             print(err_msg)
             except aiohttp.ClientError as e:
