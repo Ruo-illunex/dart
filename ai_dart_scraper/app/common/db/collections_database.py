@@ -121,7 +121,7 @@ class CollectionsDatabase:
                 
             session.commit()
 
-    def query_collectdart(self, biz_num=None, corp_num=None, company_id=None) -> Optional[CollectDartPydantic]:
+    def query_collectdart(self, biz_num: str = None, corp_num: str = None, company_id: int = None) -> Optional[CollectDartPydantic]:
         """데이터베이스에서 데이터를 조회하는 함수"""
         with self.get_session() as session:
             try:
@@ -131,7 +131,7 @@ class CollectionsDatabase:
                 elif corp_num:
                     existing_data = session.query(CollectDart).filter(CollectDart.jurir_no == corp_num).first()
                 elif company_id:
-                    existing_data = session.query(CollectDart).filter(CollectDart.company_id == company_id).first()
+                    existing_data = session.query(CollectDart).filter(CollectDart.company_id == int(company_id)).first()
                 if existing_data:
                     # id, create_date, update_date를 제외한 모든 필드를 CollectDartPydantic 모델로 변환
                     return CollectDartPydantic.from_orm(existing_data)
