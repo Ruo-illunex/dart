@@ -23,7 +23,7 @@ class CollectDartFinance(BaseCollections):
     fs_nm = Column(String(100), comment='개별/연결명')
     sj_div = Column(String(10), comment='재무제표 구분')
     sj_nm = Column(String(100), comment='재무제표 명')
-    account_id = Column(String(50), comment='계정ID')
+    account_id = Column(String(1000), comment='계정ID')
     account_nm = Column(String(255), comment='계정명')
     account_detail = Column(String(255), nullable=True, comment='계정상세')
     thstrm_nm = Column(String(45), nullable=True, comment='당기명')
