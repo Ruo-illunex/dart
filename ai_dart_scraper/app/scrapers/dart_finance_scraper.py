@@ -87,13 +87,12 @@ class DartFinanceScraper:
                                     company_finance_info_list.append(finance_info)
                                     info_msg = f"Success: Get company finance info of {info.get('corp_code')} and added to list"
                                     self.logger.info(info_msg)
-                                    print(info_msg)
                                 except ValidationError as e:
                                     err_msg = f"Validation Error for {info}: {e}"
                                     self.logger.error(err_msg)
                             if company_finance_info_list:
                                 self._collections_db.bulk_upsert_data_collectdartfinance(company_finance_info_list)
-                                success_msg = f"Saved {len(company_finance_info_list)} data for company ID {company_id}"
+                                success_msg = f"Saved {len(company_finance_info_list)} data for company ID {company_id} and corp_code {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
                                 self.logger.info(success_msg)
                                 print(success_msg)
                         else:
