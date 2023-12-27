@@ -83,7 +83,7 @@ class DartFinancePreprocessing:
                 for fs in fs_divs:
                     _df = df.loc[(df['bsns_year'] == year) & (df['fs_div'] == fs)]
                     financial_decide_code=_df.fs_div.values[0]
-                    financial_decide_name=_df.fs_nm.values[0]
+                    financial_decide_desc=_df.fs_nm.values[0]
                     thstrm_year, frmtrm_year, bfefrmtrm_year = year, str(int(year)-1), str(int(year)-2)
                     thstrm_sales, frmtrm_sales, bfefrmtrm_sales = self._search_values(_df, '매출액', sj_div='CIS')
                     thstrm_sales_cost, frmtrm_sales_cost, bfefrmtrm_sales_cost = self._search_values(_df, '매출원가', sj_div='CIS')
@@ -113,7 +113,7 @@ class DartFinancePreprocessing:
                         illu_id = illu_id,
                         acct_dt=thstrm_year,
                         financial_decide_code=financial_decide_code,
-                        financial_decide_name=financial_decide_name,
+                        financial_decide_desc=financial_decide_desc,
                         sales = thstrm_sales,
                         sales_cost = thstrm_sales_cost,
                         operating_profit = thstrm_operating_profit,
@@ -143,7 +143,7 @@ class DartFinancePreprocessing:
                         illu_id = illu_id,
                         acct_dt=frmtrm_year,
                         financial_decide_code=financial_decide_code,
-                        financial_decide_name=financial_decide_name,
+                        financial_decide_desc=financial_decide_desc,
                         sales = frmtrm_sales,
                         sales_cost = frmtrm_sales_cost,
                         operating_profit = frmtrm_operating_profit,
@@ -173,7 +173,7 @@ class DartFinancePreprocessing:
                         illu_id = illu_id,
                         acct_dt=bfefrmtrm_year,
                         financial_decide_code=financial_decide_code,
-                        financial_decide_name=financial_decide_name,
+                        financial_decide_desc=financial_decide_desc,
                         sales = bfefrmtrm_sales,
                         sales_cost = bfefrmtrm_sales_cost,
                         operating_profit = bfefrmtrm_operating_profit,
