@@ -1,5 +1,6 @@
 from app.models.collect_dart import CollectDart, CollectDartPydantic
 from app.models.collect_dart_finance import CollectDartFinance, CollectDartFinancePydantic
 from app.models.new_company_info import NewCompanyInfo, NewCompanyInfoPydantic
+from app.models.new_company_finance import NewCompanyFinance, NewCompanyFinancePydantic
 from app.models.new_scrap_company_dart_info import NewScrapCompanyDartInfo, NewScrapCompanyDartInfoPydantic
 from app.models.code_class import CodeClass, CodeClassPydantic

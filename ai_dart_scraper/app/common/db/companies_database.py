@@ -50,11 +50,36 @@ class CompaniesDatabase:
         with self.get_session() as session:
             try:
                 existing_data = session.query(CodeClass.code_value, CodeClass.code_desc).filter(CodeClass.code_class_id == '0042').all()
-                df = pd.DataFrame(existing_data, columns=['code_value', 'code_desc'])
-                return df
+                return pd.DataFrame(existing_data, columns=['code_value', 'code_desc'])
             except SQLAlchemyError as e:
                 err_msg = traceback.format_exc()
                 self.logger.error(f"Error: {e}\n{err_msg}")
+                return pd.DataFrame()
+
+    def query_companies(self, company_id: int = None, biz_num: str = None, corporation_num: str = None) -> dict:
+        """기업 정보를 조회하는 함수
+        Args:
+            company_id (str): 기업 ID
+            biz_num (str): 사업자등록번호
+            corporation_num (str): 법인등록번호
+        Returns:
+            NewCompanyInfo: 기업 정보
+        """
+        with self.get_session() as session:
+            try:
+                if company_id:
+                    existing_data = session.query(NewCompanyInfo).filter(NewCompanyInfo.id == company_id).first()
+                elif biz_num:
+                    existing_data = session.query(NewCompanyInfo).filter(NewCompanyInfo.biz_num == biz_num).first()
+                elif corporation_num:
+                    existing_data = session.query(NewCompanyInfo).filter(NewCompanyInfo.corporation_num == corporation_num).first()
+                else:
+                    return None
+                return existing_data.to_dict()
+            except SQLAlchemyError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
+                return None
 
     def _query_ids_and_corpnums_from_newscrapcompanydartinfo(self) -> list:
         with self.get_session() as session:
@@ -79,4 +104,5 @@ class CompaniesDatabase:
             except SQLAlchemyError as e:
                 err_msg = traceback.format_exc()
                 self.logger.error(f"Error: {e}\n{err_msg}")
+                return []
 

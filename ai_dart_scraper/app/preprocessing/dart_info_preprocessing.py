@@ -1,9 +1,10 @@
-from typing import List, Dict
+import traceback
+from typing import Optional
 
 from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
-from app.models_init import NewCompanyInfo, NewCompanyInfoPydantic, CollectDart, CollectDartPydantic
+from app.models_init import NewCompanyInfoPydantic, CollectDartPydantic
 from app.common.db.companies_database import CompaniesDatabase
 
 
@@ -42,39 +43,45 @@ class DartInfoPreprocessing:
         else:
             return None
 
-    def preprocess(self, data: CollectDartPydantic) -> NewCompanyInfoPydantic:
+    def preprocess(self, data: CollectDartPydantic) -> Optional[NewCompanyInfoPydantic]:
         """OpenDartReader를 이용해 수집한 기업 정보를 DB에 저장하기 위해 전처리하는 함수
         Args:
             data (CollectDartPydantic): OpenDartReader를 이용해 수집한 기업 정보
         Returns:
             NewCompanyInfoPydantic: DB에 저장하기 위해 전처리한 기업 정보
         """
-        # 기업 정보를 DB에 저장하기 위해 전처리
-        listing_market_dict = {
-            'Y': ('1', '코스피'),
-            'K': ('2', '코스닥'),
-            'N': ('3', '코넥스'),
-            'E': ('9', '대상아님')
-            }
-        ksic = self._search_ksic(data.induty_code)    # [code, industry_code, code_desc]
-        company_info = NewCompanyInfoPydantic(
-            id=data.company_id,
-            biz_num=data.bizr_no,
-            corporation_num=data.jurir_no,
-            company_name=data.corp_name,
-            real_company_name=data.stock_name,
-            representation_name=data.ceo_nm,
-            establishment_date=data.est_dt,
-            acct_month=data.acc_mt,
-            business_condition_code=ksic[2] if ksic else None,
-            business_condition_desc=ksic[-1] if ksic else None,
-            business_category_code=ksic[2]+ksic[3] if ksic else None,
-            business_category_desc=ksic[1] if ksic else None,
-            home_page_url=data.hm_url,
-            tel = data.phn_no,
-            fax = data.fax_no,
-            address=data.adres,
-            listing_market_id=listing_market_dict.get(data.corp_cls)[0],
-            listing_market_desc=listing_market_dict.get(data.corp_cls)[1],
-        )
-        return company_info
+        try:
+            # 기업 정보를 DB에 저장하기 위해 전처리
+            listing_market_dict = {
+                'Y': ('1', '코스피'),
+                'K': ('2', '코스닥'),
+                'N': ('3', '코넥스'),
+                'E': ('9', '대상아님')
+                }
+            ksic = self._search_ksic(data.induty_code)    # [code, industry_code, code_desc]
+            company_info = NewCompanyInfoPydantic(
+                id=data.company_id,
+                biz_num=data.bizr_no,
+                corporation_num=data.jurir_no,
+                company_name=data.corp_name,
+                real_company_name=data.stock_name,
+                representation_name=data.ceo_nm,
+                establishment_date=data.est_dt,
+                acct_month=data.acc_mt,
+                business_condition_code=ksic[2] if ksic else None,
+                business_condition_desc=ksic[-1] if ksic else None,
+                business_category_code=ksic[2]+ksic[3] if ksic else None,
+                business_category_desc=ksic[1] if ksic else None,
+                home_page_url=data.hm_url,
+                tel = data.phn_no,
+                fax = data.fax_no,
+                address=data.adres,
+                listing_market_id=listing_market_dict.get(data.corp_cls)[0],
+                listing_market_desc=listing_market_dict.get(data.corp_cls)[1],
+            )
+            return company_info
+        except Exception as e:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            self._logger.error(f"Error: {e}")
+            return None

@@ -6,6 +6,7 @@ from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+import pandas as pd
 
 from app.config.settings import COLLECTIONS_DB_URL
 from app.common.log.log_config import setup_logger
@@ -144,35 +145,27 @@ class CollectionsDatabase:
                 self.logger.error(f"Error: {e}\n{err_msg}")
                 return None
 
-    # def query_collectdart(self, batchsize: int = 1000) -> list:
-    #     """데이터베이스에서 데이터를 조회하는 함수
-    #     Args:
-    #         batchsize (int, optional): 조회할 데이터의 개수. Defaults to 1000.
-    #     Returns:
-    #         list: 조회한 데이터 리스트
-    #     """
-    #     with self.get_session() as session:
-    #         try:
-    #             # 마지막으로 조회한 id가 있으면 해당 id보다 큰 id를 가진 데이터를 조회
-    #             if self.last_queried_id_collectdart:
-    #                 existing_data = session.query(CollectDart).filter(
-    #                     CollectDart.id > self.last_queried_id_collectdart
-    #                 ).limit(batchsize).all()
-    #                 info_msg = f"Last queried id: {self.last_queried_id_collectdart}"
-    #                 self.logger.info(info_msg)
-    #                 print(info_msg)
-    #             # 마지막으로 조회한 id가 없으면 처음부터 batchsize만큼 데이터를 조회
-    #             else:
-    #                 existing_data = session.query(CollectDart).limit(batchsize).all()
-    #                 info_msg = "No last queried id"
-    #                 self.logger.info(info_msg)
-    #                 print(info_msg)
-
-    #             # 마지막으로 조회한 id를 업데이트
-    #             if existing_data:
-    #                 self.last_queried_id_collectdart = existing_data[-1].id
-    #             return existing_data
-    #         except Exception as e:
-    #             err_msg = traceback.format_exc()
-    #             self.logger.error(f"Error: {e}\n{err_msg}")
-    #             return []
+    def query_collectdartfinance(self, biz_num: str = None, corp_num: str = None, company_id: int = None) -> pd.DataFrame:
+        """데이터베이스에서 데이터를 조회하는 함수"""
+        with self.get_session() as session:
+            try:
+                assert biz_num or corp_num or company_id, "biz_num, corp_num, company_id 중 하나는 필수로 입력해야 합니다."
+                if biz_num:
+                    company_id = self._companies_db.query_companies(biz_num=biz_num).get('id')
+                elif corp_num:
+                    company_id = self._companies_db.query_companies(corporation_num=corp_num).get('id')
+                if company_id:
+                    existing_data = session.query(CollectDartFinance).filter(CollectDartFinance.company_id == company_id).all()
+                    if existing_data:
+                        df = pd.DataFrame([data.to_dict() for data in existing_data])
+                        return df
+                    else:
+                        raise Exception(f"해당 기업의 재무 정보가 없습니다. biz_num: {biz_num}, corp_num: {corp_num}, company_id: {company_id}")
+            except AssertionError as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
+                return pd.DataFrame()
+            except Exception as e:
+                err_msg = traceback.format_exc()
+                self.logger.error(f"Error: {e}\n{err_msg}")
+                return pd.DataFrame()

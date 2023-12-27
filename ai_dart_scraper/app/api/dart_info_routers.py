@@ -31,6 +31,7 @@ class NewCompanyInfoResponse(BaseModel):
     """기업 정보 응답 모델 클래스"""
     newCompanyInfo: List[NewCompanyInfoPydantic]
 
+
 def get_company_info(bizNum: str = None, corpNum: str = None, companyId: str = None) -> Optional[NewCompanyInfoPydantic]:
     """사업자등록번호로 기업 정보를 조회하는 함수
     Args:
@@ -43,7 +44,7 @@ def get_company_info(bizNum: str = None, corpNum: str = None, companyId: str = N
         if bizNum:
             data = collections_db.query_collectdart(biz_num=bizNum)
         elif corpNum:
-            data = collections_db.query_collectdart(corp_code=corpNum)
+            data = collections_db.query_collectdart(corp_num=corpNum)
         elif companyId:
             data = collections_db.query_collectdart(company_id=companyId)
         if not data:
@@ -67,11 +68,10 @@ def get_company_info_by_biznum_endpoint(bizNum: str):
     if bizNum == '':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="사업자등록번호를 입력해주세요.")
     try:
-        data = get_company_info(bizNum)
-        if data:
-            return NewCompanyInfoResponse(newCompanyInfo=[data])
-        else:
+        data = get_company_info(bizNum=bizNum)
+        if not data:
             return NewCompanyInfoResponse(newCompanyInfo=[])
+        return NewCompanyInfoResponse(newCompanyInfo=[data])
     except Exception as e:
         err_msg = traceback.format_exc()
         logger.error(err_msg)
@@ -89,11 +89,10 @@ def get_company_info_by_corpnum_endpoint(corpNum: str):
     if corpNum == '':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="법인등록번호를 입력해주세요.")
     try:
-        data = get_company_info(corpNum)
-        if data:
-            return NewCompanyInfoResponse(newCompanyInfo=[data])
-        else:
+        data = get_company_info(corpNum=corpNum)
+        if not data:
             return NewCompanyInfoResponse(newCompanyInfo=[])
+        return NewCompanyInfoResponse(newCompanyInfo=[data])
     except Exception as e:
         err_msg = traceback.format_exc()
         logger.error(err_msg)
@@ -111,11 +110,10 @@ def get_company_info_by_companyid_endpoint(companyId: str):
     if companyId == '':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="기업 ID를 입력해주세요.")
     try:
-        data = get_company_info(companyId)
-        if data:
-            return NewCompanyInfoResponse(newCompanyInfo=[data])
-        else:
+        data = get_company_info(companyId=companyId)
+        if not data:
             return NewCompanyInfoResponse(newCompanyInfo=[])
+        return NewCompanyInfoResponse(newCompanyInfo=[data])
     except Exception as e:
         err_msg = traceback.format_exc()
         logger.error(err_msg)

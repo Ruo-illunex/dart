@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import Column, Integer, String, BigInteger, Date
+from sqlalchemy import Column, Integer, String, BigInteger, Date, inspect
 from pydantic import BaseModel
 
 from app.common.db.base import BaseCollections
@@ -47,6 +47,10 @@ class CollectDartFinance(BaseCollections):
         'mysql_charset': 'utf8mb4',
         'mysql_collate': 'utf8mb4_unicode_ci'
     }
+    
+    def to_dict(self):
+        """모델 인스턴스를 딕셔너리로 변환하는 메서드"""
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
 
 class CollectDartFinancePydantic(BaseModel):

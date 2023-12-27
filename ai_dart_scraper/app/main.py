@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from typing import Optional
 
 from app.api.dart_info_routers import router as dart_info_router
+from app.api.dart_finance_routers import router as dart_finance_router
 from app.common.db.collections_database import CollectionsDatabase
 from app.common.db.companies_database import CompaniesDatabase
 from app.common.db.base import BaseCollections, BaseCompanies
@@ -39,6 +40,7 @@ BaseCompanies.metadata.create_all(bind=companies_db_engine)
 
 app = FastAPI()
 app.include_router(dart_info_router, prefix="/api/v1")
+app.include_router(dart_finance_router, prefix="/api/v1")
 
 
 @app.get("/health")
