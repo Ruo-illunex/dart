@@ -40,7 +40,7 @@ class DartFinanceScraper:
             'CFS',      # 연결재무제표
             'OFS'       # 재무제표 or 별도재무제표
             ]
-        self._delay_time = 2.3  # OpenDartReader API 호출 시 딜레이 - 초 단위
+        self._delay_time = 1.8  # OpenDartReader API 호출 시 딜레이 - 초 단위
 
     async def __aenter__(self):
         if not hasattr(self, 'session') or self.session.closed:
@@ -106,7 +106,7 @@ class DartFinanceScraper:
 
     async def scrape_dart_finance(self) -> None:
         async with self as scraper:
-            semaphore = asyncio.Semaphore(5)  # 동시 요청 수를 제어하는 세마포어
+            semaphore = asyncio.Semaphore(7)  # 동시 요청 수를 제어하는 세마포어
             tasks = []
             for company_id, corp_code in self._compids_and_corpcodes:
                 for bsns_year in self._bsns_year_ls:
