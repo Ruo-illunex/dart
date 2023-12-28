@@ -84,7 +84,7 @@ class NewCompanyFinancePydantic(BaseModel):
     accounts_payable: str = None
     trade_receivable: str = None
     short_term_loan: str = None
-    # net_working_capital: str = None
+    net_working_capital: str = None
     selling_general_administrative_expenses: str = None
     
     class Config:
