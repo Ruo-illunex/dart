@@ -6,7 +6,7 @@ import pandas as pd
 from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
-from app.models_init import NewCompanyFinancePydantic, CollectDartFinancePydantic
+from app.models_init import NewCompanyFinancePydantic
 from app.common.db.companies_database import CompaniesDatabase
 
 
@@ -34,7 +34,7 @@ class DartFinancePreprocessing:
         illu_id = data.get('illu_id')
         return biz_num, corporation_num, illu_id
 
-    def _search_values(self, df: pd.DataFrame, account_nm: str, sj_div: str) -> tuple:
+    def _search_values(self, df: pd.DataFrame, account_nm: str, sj_div: str, like_mode=False) -> tuple:
         """항목명으로 해당 항목의 값들을 찾는 함수
         Args:
             df (pd.DataFrame): 재무 정보 데이터프레임
@@ -43,13 +43,23 @@ class DartFinancePreprocessing:
         Returns:
             tuple: (당기, 전기, 전전기)
         """
-        cond1 = (df.account_nm == account_nm)
-        cond2 = (df['thstrm_nm'].str.contains(r'제\s+\d+\s+기$'))
-        cond3 = (df.sj_div == sj_div)
-        thstrm_amount = df[cond1 & cond2 & cond3].thstrm_amount.values[0][:-3]
-        frmtrm_amount = df[cond1 & cond2 & cond3].frmtrm_amount.values[0][:-3]
-        bfefrmtrm_amount = df[cond1 & cond2 & cond3].bfefrmtrm_amount.values[0][:-3]
-        return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
+        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = '', '', ''
+        try:
+            if like_mode:
+                cond1 = (df['account_nm'].str.contains(account_nm, na=False))
+            else:
+                cond1 = (df.account_nm == account_nm)
+            cond2 = (df['thstrm_nm'].str.contains(r'제\s+\d+\s+기$'))
+            cond3 = (df.sj_div == sj_div)
+            thstrm_amount = df[cond1 & cond2 & cond3].thstrm_amount.values[0][:-3]
+            frmtrm_amount = df[cond1 & cond2 & cond3].frmtrm_amount.values[0][:-3]
+            bfefrmtrm_amount = df[cond1 & cond2 & cond3].bfefrmtrm_amount.values[0][:-3]
+            return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
+        # 항목명이 없을 경우
+        except IndexError:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
 
     def _get_financial_dept_ratio(self, capital_total: str, dept_total: str) -> str:
         """부채비율을 계산하는 함수
@@ -85,7 +95,7 @@ class DartFinancePreprocessing:
                     financial_decide_code=_df.fs_div.values[0]
                     financial_decide_desc=_df.fs_nm.values[0]
                     thstrm_year, frmtrm_year, bfefrmtrm_year = year, str(int(year)-1), str(int(year)-2)
-                    thstrm_sales, frmtrm_sales, bfefrmtrm_sales = self._search_values(_df, '매출액', sj_div='CIS')
+                    thstrm_sales, frmtrm_sales, bfefrmtrm_sales = self._search_values(_df, '매출액', sj_div='CIS', like_mode=True)
                     thstrm_sales_cost, frmtrm_sales_cost, bfefrmtrm_sales_cost = self._search_values(_df, '매출원가', sj_div='CIS')
                     thstrm_operating_profit, frmtrm_operating_profit, bfefrmtrm_operating_profit = self._search_values(_df, '영업이익', sj_div='CIS')
                     thstrm_net_profit, frmtrm_net_profit, bfefrmtrm_net_profit = self._search_values(_df, '당기순이익(손실)', sj_div='CF')
