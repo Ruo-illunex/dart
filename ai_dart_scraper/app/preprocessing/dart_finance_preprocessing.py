@@ -119,6 +119,75 @@ class DartFinancePreprocessing:
             financial_dept_ratio = ''
         return financial_dept_ratio
 
+    def _get_net_worth(self, asset_total: str, dept_total: str) -> str:
+        """순자산총계를 계산하는 함수
+        Args:
+            asset_total (str): 자산총계
+            dept_total (str): 부채총계
+        Returns:
+            str: 순자산총계
+        """
+        networth_total = ''
+        assert asset_total != '', '자산총계가 없습니다.'
+        assert dept_total != '', '부채총계가 없습니다.'
+        try:
+            networth_total = str(int(asset_total) - int(dept_total))
+        except AssertionError as e:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            self._logger.error(f"Error: {e}")
+        except Exception as e:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            self._logger.error(f"Error: {e}")
+        return networth_total
+
+    def _get_quick_asset(self, current_asset: str, inventories_asset: str) -> str:
+        """당좌자산을 계산하는 함수
+        Args:
+            current_asset (str): 유동자산
+            inventories_asset (str): 재고자산
+        Returns:
+            str: 당좌자산
+        """
+        quick_asset = ''
+        assert current_asset != '', '유동자산이 없습니다.'
+        assert inventories_asset != '', '재고자산이 없습니다.'
+        try:
+            quick_asset = str(int(current_asset) - int(inventories_asset))
+        except AssertionError as e:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            self._logger.error(f"Error: {e}")
+        except Exception as e:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            self._logger.error(f"Error: {e}")
+        return quick_asset
+
+    def _get_net_working_capital(self, current_asset: str, current_liabilities: str) -> str:
+        """순운전자본을 계산하는 함수
+        Args:
+            current_asset (str): 유동자산
+            current_liabilities (str): 유동부채
+        Returns:
+            str: 순운전자본
+        """
+        net_working_capital = ''
+        assert current_asset != '', '유동자산이 없습니다.'
+        assert current_liabilities != '', '유동부채가 없습니다.'
+        try:
+            net_working_capital = str(int(current_asset) - int(current_liabilities))
+        except AssertionError as e:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            self._logger.error(f"Error: {e}")
+        except Exception as e:
+            err_msg = traceback.format_exc()
+            self._logger.error(err_msg)
+            self._logger.error(f"Error: {e}")
+        return net_working_capital
+
     def preprocess(self, df: pd.DataFrame) -> Optional[List[NewCompanyFinancePydantic]]:
         """OpenDartReader를 이용해 수집한 기업 재무 정보를 DB에 저장하기 위해 전처리하는 함수
         Args:
@@ -147,18 +216,21 @@ class DartFinancePreprocessing:
                     thstrm_capital_total, frmtrm_capital_total, bfefrmtrm_capital_total = self._search_values(_df, '자본총계', sj_div='BS')
                     thstrm_dept_total, frmtrm_dept_total, bfefrmtrm_dept_total = self._search_values(_df, '부채총계', sj_div='BS')
                     thstrm_assets_total, frmtrm_assets_total, bfefrmtrm_assets_total = self._search_values(_df, '자산총계', sj_div='BS')
+                    thstrm_financial_debt_ratio, frmtrm_financial_debt_ratio, bfefrmtrm_financial_debt_ratio = self._get_financial_dept_ratio(thstrm_capital_total, thstrm_dept_total), self._get_financial_dept_ratio(frmtrm_capital_total, frmtrm_dept_total), self._get_financial_dept_ratio(bfefrmtrm_capital_total, bfefrmtrm_dept_total)
                     thstrm_comprehensive_income, frmtrm_comprehensive_income, bfefrmtrm_comprehensive_income = self._search_values(_df, '총포괄손익', sj_div='CIS')
                     thstrm_tangible_asset, frmtrm_tangible_asset, bfefrmtrm_tangible_asset = self._search_values(_df, '유형자산', sj_div='BS')
                     thstrm_none_tangible_asset, frmtrm_none_tangible_asset, bfefrmtrm_none_tangible_asset = self._search_values(_df, '무형자산', sj_div='BS', alt_account_nm_ls=['영업권 이외의 무형자산'])
                     thstrm_current_asset, frmtrm_current_asset, bfefrmtrm_current_asset = self._search_values(_df, '유동자산', sj_div='BS')
                     thstrm_none_current_asset, frmtrm_none_current_asset, bfefrmtrm_none_current_asset = self._search_values(_df, '비유동자산', sj_div='BS')
                     thstrm_current_liabilities, frmtrm_current_liabilities, bfefrmtrm_current_liabilities = self._search_values(_df, '유동부채', sj_div='BS')
+                    thstrm_net_worth, frmtrm_net_worth, bfefrmtrm_net_worth = self._get_net_worth(thstrm_assets_total, thstrm_dept_total), self._get_net_worth(frmtrm_assets_total, frmtrm_dept_total), self._get_net_worth(bfefrmtrm_assets_total, bfefrmtrm_dept_total)
+                    thstrm_quick_asset, frmtrm_quick_asset, bfefrmtrm_quick_asset = self._get_quick_asset(thstrm_current_asset, thstrm_inventories_asset), self._get_quick_asset(frmtrm_current_asset, frmtrm_inventories_asset), self._get_quick_asset(bfefrmtrm_current_asset, bfefrmtrm_inventories_asset)
                     thstrm_inventories_asset, frmtrm_inventories_asset, bfefrmtrm_inventories_asset = self._search_values(_df, '재고자산', sj_div='BS')
                     thstrm_accounts_payable, frmtrm_accounts_payable, bfefrmtrm_accounts_payable = self._search_values(_df, '매입채무', sj_div='BS', alt_account_nm_ls=['매입채무 및 기타유동채무'])
                     thstrm_trade_receivable, frmtrm_trade_receivable, bfefrmtrm_trade_receivable = self._search_values(_df, '매출채권', sj_div='BS', alt_account_nm_ls=['매출채권 및 기타유동채권'])
                     thstrm_short_term_loan, frmtrm_short_term_loan, bfefrmtrm_short_term_loan = self._search_values(_df, '단기차입금', sj_div='BS')
+                    thstrm_networking_capital, frmtrm_networking_capital, bfefrmtrm_networking_capital = self._get_net_working_capital(thstrm_current_asset, thstrm_current_liabilities), self._get_net_working_capital(frmtrm_current_asset, frmtrm_current_liabilities), self._get_net_working_capital(bfefrmtrm_current_asset, bfefrmtrm_current_liabilities)
                     thstrm_selling_general_administrative_expenses, frmtrm_selling_general_administrative_expenses, bfefrmtrm_selling_general_administrative_expenses = self._search_values(_df, '판매비와관리비', sj_div='CIS')
-                    thstrm_financial_debt_ratio, frmtrm_financial_debt_ratio, bfefrmtrm_financial_debt_ratio = self._get_financial_dept_ratio(thstrm_capital_total, thstrm_dept_total), self._get_financial_dept_ratio(frmtrm_capital_total, frmtrm_dept_total), self._get_financial_dept_ratio(bfefrmtrm_capital_total, bfefrmtrm_dept_total)
                     
                     thstrm_company_finance = NewCompanyFinancePydantic(
                         company_id = company_id,
@@ -183,10 +255,13 @@ class DartFinancePreprocessing:
                         current_asset = thstrm_current_asset,
                         non_current_asset = thstrm_none_current_asset,
                         current_liabilities = thstrm_current_liabilities,
+                        net_worth = thstrm_net_worth,
+                        quick_asset = thstrm_quick_asset,
                         inventories_asset = thstrm_inventories_asset,
                         accounts_payable = thstrm_accounts_payable,
                         trade_receivable = thstrm_trade_receivable,
                         short_term_loan = thstrm_short_term_loan,
+                        net_working_capital = thstrm_networking_capital,
                         selling_general_administrative_expenses = thstrm_selling_general_administrative_expenses
                     )
                     
@@ -213,10 +288,13 @@ class DartFinancePreprocessing:
                         current_asset = frmtrm_current_asset,
                         non_current_asset = frmtrm_none_current_asset,
                         current_liabilities = frmtrm_current_liabilities,
+                        net_worth = frmtrm_net_worth,
+                        quick_asset = frmtrm_quick_asset,
                         inventories_asset = frmtrm_inventories_asset,
                         accounts_payable = frmtrm_accounts_payable,
                         trade_receivable = frmtrm_trade_receivable,
                         short_term_loan = frmtrm_short_term_loan,
+                        net_working_capital = frmtrm_networking_capital,
                         selling_general_administrative_expenses = frmtrm_selling_general_administrative_expenses
                     )
                     
@@ -243,10 +321,13 @@ class DartFinancePreprocessing:
                         current_asset = bfefrmtrm_current_asset,
                         non_current_asset = bfefrmtrm_none_current_asset,
                         current_liabilities = bfefrmtrm_current_liabilities,
+                        net_worth = bfefrmtrm_net_worth,
+                        quick_asset = bfefrmtrm_quick_asset,
                         inventories_asset = bfefrmtrm_inventories_asset,
                         accounts_payable = bfefrmtrm_accounts_payable,
                         trade_receivable = bfefrmtrm_trade_receivable,
                         short_term_loan = bfefrmtrm_short_term_loan,
+                        net_working_capital = bfefrmtrm_networking_capital,
                         selling_general_administrative_expenses = bfefrmtrm_selling_general_administrative_expenses
                     )
                     
