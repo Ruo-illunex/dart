@@ -2,14 +2,14 @@ from fastapi import FastAPI
 
 from typing import Optional
 
-from app.api.dart_info_routers import router as dart_info_router
-from app.api.dart_finance_routers import router as dart_finance_router
-from app.database_init import collections_db, companies_db
-from app.common.db.base import BaseCollections, BaseCompanies
 from app.common.log.log_config import setup_logger
+from app.common.core.utils import get_current_datetime, make_dir
 from app.models_init import *
 from app.scrapers_init import *
-from app.common.core.utils import get_current_datetime, make_dir
+from app.database_init import *
+from app.common.db.base import BaseCollections, BaseCompanies
+from app.api.dart_info_routers import router as dart_info_router
+from app.api.dart_finance_routers import router as dart_finance_router
 from app.config.settings import FILE_PATHS, SYNOLOGY_CHAT
 
 
@@ -23,7 +23,7 @@ logger = setup_logger(
     file_path,
 )
 
-# 시놀로지 챗봇 설정
+# 시놀로지 챗봇 설정    -> ** 추후 시놀로지 챗봇으로 알림기능 추가 **
 prod_token = SYNOLOGY_CHAT['prod_token']
 dev_token = SYNOLOGY_CHAT['dev_token']
 test_token = SYNOLOGY_CHAT['test_token']

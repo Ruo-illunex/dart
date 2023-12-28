@@ -206,9 +206,9 @@ class DartFinancePreprocessing:
     def preprocess(self, df: pd.DataFrame) -> Optional[List[NewCompanyFinancePydantic]]:
         """OpenDartReader를 이용해 수집한 기업 재무 정보를 DB에 저장하기 위해 전처리하는 함수
         Args:
-            data (List[CollectDartFinancePydantic]): OpenDartReader를 이용해 수집한 기업 재무 정보
+            df (pd.DataFrame): 재무 정보 데이터프레임
         Returns:
-            NewCompanyFinancePydantic: DB에 저장하기 위해 전처리한 기업 재무 정보
+            Optional[List[NewCompanyFinancePydantic]]: 전처리된 기업 재무 정보
         """
         results = []
         try:
@@ -223,9 +223,9 @@ class DartFinancePreprocessing:
                     financial_decide_code=_df.fs_div.values[0]
                     financial_decide_desc=_df.fs_nm.values[0]
                     thstrm_year, frmtrm_year, bfefrmtrm_year = year, str(int(year)-1), str(int(year)-2)
-                    thstrm_sales, frmtrm_sales, bfefrmtrm_sales = self._search_values(_df, account_nm='매출액', sj_div='CIS', alt_account_nm_ls=['수익(매출액)'])
-                    thstrm_sales_cost, frmtrm_sales_cost, bfefrmtrm_sales_cost = self._search_values(_df, account_nm='매출원가', sj_div='CIS')
-                    thstrm_operating_profit, frmtrm_operating_profit, bfefrmtrm_operating_profit = self._search_values(_df, account_nm='영업이익', sj_div='CIS', alt_account_nm_ls=['영업이익(손실)'])
+                    thstrm_sales, frmtrm_sales, bfefrmtrm_sales = self._search_values(_df, sj_div='CIS', account_id='ifrs-full_Revenue')
+                    thstrm_sales_cost, frmtrm_sales_cost, bfefrmtrm_sales_cost = self._search_values(_df, sj_div='CIS', account_id='ifrs-full_CostOfSales', alt_account_nm_ls=['매출원가'])
+                    thstrm_operating_profit, frmtrm_operating_profit, bfefrmtrm_operating_profit = self._search_values(_df, sj_div='CIS', account_id='dart_OperatingIncomeLoss', alt_sj_div_ls=['IS'])
                     thstrm_net_profit, frmtrm_net_profit, bfefrmtrm_net_profit = self._search_values(_df, sj_div='CIS', account_id='ifrs-full_ProfitLoss')
                     thstrm_capital_amount, frmtrm_capital_amount, bfefrmtrm_capital_amount = self._search_values(_df, account_nm='자본금', sj_div='BS')
                     thstrm_capital_total, frmtrm_capital_total, bfefrmtrm_capital_total = self._search_values(_df, account_nm='자본총계', sj_div='BS')
