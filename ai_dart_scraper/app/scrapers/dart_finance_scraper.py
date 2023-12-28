@@ -5,8 +5,7 @@ import datetime
 import aiohttp
 from pydantic import ValidationError
 
-from app.common.db.collections_database import CollectionsDatabase
-from app.common.db.companies_database import CompaniesDatabase
+from app.database_init import collections_db
 from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS, DART_API_KEY
 from app.common.core.utils import get_current_datetime, make_dir
@@ -22,9 +21,7 @@ class DartFinanceScraper:
             "dart_finance_scraper",
             file_path
         )
-        self._collections_db = CollectionsDatabase()
-        self._companies_db = CompaniesDatabase()
-        self._compids_and_corpcodes = self._collections_db.get_companyids_and_corpcodes()    # [(company_id, corp_code), ...]
+        self._compids_and_corpcodes = collections_db.get_companyids_and_corpcodes()    # [(company_id, corp_code), ...]
 
         self._url = 'https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json'
         self._params = {'crtfc_key': DART_API_KEY}
@@ -90,7 +87,7 @@ class DartFinanceScraper:
                                     err_msg = f"Validation Error for {info}: {e}"
                                     self._logger.error(err_msg)
                             if company_finance_info_list:
-                                self._collections_db.bulk_upsert_data_collectdartfinance(company_finance_info_list)
+                                collections_db.bulk_upsert_data_collectdartfinance(company_finance_info_list)
                                 success_msg = f"Saved {len(company_finance_info_list)} data for company ID {company_id} and corp_code {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
                                 self._logger.info(success_msg)
                                 print(success_msg)

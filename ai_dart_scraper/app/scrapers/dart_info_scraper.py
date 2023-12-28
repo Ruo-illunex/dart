@@ -4,8 +4,7 @@ import traceback
 import aiohttp
 from pydantic import ValidationError
 
-from app.common.db.collections_database import CollectionsDatabase
-from app.common.db.companies_database import CompaniesDatabase
+from app.database_init import collections_db, companies_db
 from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS, DART_API_KEY
 from app.common.core.utils import get_current_datetime, make_dir, get_corp_codes
@@ -21,9 +20,7 @@ class DartInfoScraper:
             "dart_info_scraper",
             file_path
         )
-        self._collections_db = CollectionsDatabase()
-        self._companies_db = CompaniesDatabase()
-        self._company_id_dict = self._companies_db.company_id_dict  # {corporation_num: company_id, ...}
+        self._company_id_dict = companies_db.company_id_dict  # {corporation_num: company_id, ...}
 
         self._url = 'https://opendart.fss.or.kr/api/company.json'
         self._params = {'crtfc_key': DART_API_KEY}
@@ -116,7 +113,7 @@ class DartInfoScraper:
 
                     # temp_list에 100개의 데이터가 모이면 데이터베이스에 저장
                     if len(temp_list) == self._batch_size:
-                        self._collections_db.bulk_upsert_data_collectdart(temp_list)
+                        collections_db.bulk_upsert_data_collectdart(temp_list)
                         success_msg = f"Saved {len(temp_list)} data"
                         self._logger.info(success_msg)
                         print(success_msg)
@@ -124,7 +121,7 @@ class DartInfoScraper:
 
             # 남은 데이터가 있다면 마지막으로 저장
             if temp_list:
-                self._collections_db.bulk_upsert_data_collectdart(temp_list)
+                collections_db.bulk_upsert_data_collectdart(temp_list)
                 success_msg = f"Saved {len(temp_list)} data"
                 self._logger.info(success_msg)
                 print(success_msg)

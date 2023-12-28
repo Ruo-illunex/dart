@@ -4,8 +4,7 @@ import traceback
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from app.common.db.collections_database import CollectionsDatabase
-from app.common.db.companies_database import CompaniesDatabase
+from app.database_init import collections_db
 from app.models_init import NewCompanyFinancePydantic
 from app.common.core.utils import get_current_datetime, make_dir
 from app.config.settings import FILE_PATHS
@@ -21,8 +20,6 @@ logger = setup_logger(
     "dart_finance_routers",
     file_path
 )
-collections_db = CollectionsDatabase()
-companies_db = CompaniesDatabase()
 
 dart_finance_preprocessing = DartFinancePreprocessing()
 

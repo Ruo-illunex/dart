@@ -5,7 +5,7 @@ from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
 from app.models_init import NewCompanyInfoPydantic, CollectDartPydantic
-from app.common.db.companies_database import CompaniesDatabase
+from app.database_init import companies_db
 
 
 class DartInfoPreprocessing:
@@ -17,11 +17,10 @@ class DartInfoPreprocessing:
             "dart_info_preprocessing",
             file_path
         )
-        self._companies_db = CompaniesDatabase()
         self._get_ksic()
         
     def _get_ksic(self):
-        self._ksic_df = self._companies_db.get_ksic()   # [code_value, code_desc]
+        self._ksic_df = companies_db.get_ksic()   # [code_value, code_desc]
         # code_value = A01100 -> code: A, industry_code: 01100 분리 -> industry_code: 011로 뒤에 0 제거 (주의 앞에 0은 제거하지 않음)
         self._ksic_df['code'] = self._ksic_df['code_value'].apply(lambda x: x[0])   # A
         self._ksic_df['industry_code'] = self._ksic_df['code_value'].apply(lambda x: x[1:]) # 01100

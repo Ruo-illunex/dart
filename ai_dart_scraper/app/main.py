@@ -4,8 +4,7 @@ from typing import Optional
 
 from app.api.dart_info_routers import router as dart_info_router
 from app.api.dart_finance_routers import router as dart_finance_router
-from app.common.db.collections_database import CollectionsDatabase
-from app.common.db.companies_database import CompaniesDatabase
+from app.database_init import collections_db, companies_db
 from app.common.db.base import BaseCollections, BaseCompanies
 from app.common.log.log_config import setup_logger
 from app.models_init import *
@@ -30,8 +29,8 @@ dev_token = SYNOLOGY_CHAT['dev_token']
 test_token = SYNOLOGY_CHAT['test_token']
 
 # DB 연결
-collections_db_engine = CollectionsDatabase().engine
-companies_db_engine = CompaniesDatabase().engine
+collections_db_engine = collections_db.engine
+companies_db_engine = companies_db.engine
 
 # DB 테이블 생성
 BaseCollections.metadata.create_all(bind=collections_db_engine)

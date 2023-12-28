@@ -13,7 +13,7 @@ from app.common.log.log_config import setup_logger
 from app.config.settings import FILE_PATHS
 from app.common.core.utils import get_current_datetime, make_dir
 from app.models_init import CollectDart, CollectDartPydantic, CollectDartFinance, CollectDartFinancePydantic
-from app.common.db.companies_database import CompaniesDatabase
+from app.database_init import companies_db
 
 
 class CollectionsDatabase:
@@ -28,8 +28,7 @@ class CollectionsDatabase:
             file_path
         )
         self.last_queried_id_collectdart = None
-        self._companies_db = CompaniesDatabase()
-        self._company_ids_from_newscrapcompanydartinfo = self._companies_db.company_ids_from_newscrapcompanydartinfo    # [company_id, ...]
+        self._company_ids_from_newscrapcompanydartinfo = companies_db.company_ids_from_newscrapcompanydartinfo    # [company_id, ...]
 
     @contextmanager
     def get_session(self):
@@ -151,9 +150,9 @@ class CollectionsDatabase:
             try:
                 assert biz_num or corp_num or company_id, "biz_num, corp_num, company_id 중 하나는 필수로 입력해야 합니다."
                 if biz_num:
-                    company_id = self._companies_db.query_companies(biz_num=biz_num).get('id')
+                    company_id = companies_db.query_companies(biz_num=biz_num).get('id')
                 elif corp_num:
-                    company_id = self._companies_db.query_companies(corporation_num=corp_num).get('id')
+                    company_id = companies_db.query_companies(corporation_num=corp_num).get('id')
                 if company_id:
                     existing_data = session.query(CollectDartFinance).filter(CollectDartFinance.company_id == company_id).all()
                     if existing_data:
