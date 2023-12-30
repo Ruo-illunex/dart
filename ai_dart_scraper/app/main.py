@@ -57,8 +57,8 @@ async def scrape_dart_info():
 
 # bsns_year: Optional[int] = None -> parameter가 없으면 None으로 설정
 @app.get("/scrape/dart_finance")
-async def scrape_dart_finance(bsns_year: Optional[int] = None):
+async def scrape_dart_finance(bsns_year: Optional[int] = None, api_call_limit: Optional[int] = 20000):
     """OpenDartReader를 이용해 모든 기업의 재무 정보를 수집하는 함수"""
-    scraper = DartFinanceScraper(bsns_year)
+    scraper = DartFinanceScraper(bsns_year=bsns_year, api_call_limit=api_call_limit)
     await scraper.scrape_dart_finance()
     return {"status": "Scraping in progress..."}

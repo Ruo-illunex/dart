@@ -13,7 +13,7 @@ from app.models_init import CollectDartFinancePydantic
 
 
 class DartFinanceScraper:
-    def __init__(self, bsns_year:int = None) -> None:
+    def __init__(self, bsns_year:int = None, api_call_limit: int = 20000) -> None:
         file_path = FILE_PATHS["log"] + f'scrapers'
         make_dir(file_path)
         file_path += f'/dart_finance_scraper_{get_current_datetime()}.log'
@@ -41,7 +41,20 @@ class DartFinanceScraper:
             'CFS',      # 연결재무제표
             'OFS'       # 재무제표 or 별도재무제표
             ]
-        self._delay_time = 4.5  # OpenDartReader API 호출 시 딜레이 - 초 단위
+        self._delay_time = 25  # OpenDartReader API 호출 시 딜레이 - 초 단위
+        self._api_call_limit = api_call_limit
+        self._api_call_count = 0
+        self._now = datetime.datetime.now()
+
+    def _check_if_past_midnight(self):
+        """현재 시간이 자정 이후인지 확인합니다."""
+        now = datetime.datetime.now()
+        if now.day != self._now.day:
+            self._now = now
+            self._api_call_count = 0
+            self._api_call_limit = 20000
+            return True
+        return False
 
     async def __aenter__(self):
         if not hasattr(self, 'session') or self.session.closed:
@@ -57,17 +70,28 @@ class DartFinanceScraper:
 
     async def _get_company_finance_info(self, session, company_id, corp_code, bsns_year, reprt_code, fs_div, semaphore, order_idx) -> None:
         async with semaphore:
-            percentage = round((order_idx + 1) / self._size * 100, 2)
-            info_msg = f"Start: {order_idx + 1} / {self._size} ({percentage}%) - Get company finance info of {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
-            self._logger.info(info_msg)
-            print(info_msg)
-
             self._params.update({
                 'corp_code': corp_code,
                 'bsns_year': bsns_year,
                 'reprt_code': reprt_code,
                 'fs_div': fs_div
             })
+
+            if self._api_call_count >= self._api_call_limit:
+                info_msg = f"API call limit reached. Waiting until midnight"
+                self._logger.info(info_msg)
+                print(info_msg)
+                await self._wait_until_midnight()
+
+            if self._check_if_past_midnight():
+                info_msg = f"Past midnight. Resetting API call count and limit"
+                self._logger.info(info_msg)
+                print(info_msg)
+
+            percentage = round((order_idx + 1) / self._size * 100, 2)
+            info_msg = f"Start: {order_idx + 1} / {self._size} ({percentage}%) - Get company finance info of {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
+            self._logger.info(info_msg)
+            print(info_msg)
 
             try:
                 if_exists = collections_db.check_if_exists_collectdartfinance(corp_code, bsns_year, reprt_code, fs_div)
@@ -77,6 +101,11 @@ class DartFinanceScraper:
                     self._logger.info(info_msg)
                     print(info_msg)
                 else:
+                    self._api_call_count += 1
+                    info_msg = f"API call count: {self._api_call_count} / {self._api_call_limit}"
+                    self._logger.info(info_msg)
+                    print(info_msg)
+
                     async with session.get(self._url, params=self._params) as response:
                         if response.status != 200:
                             err_msg = f"Error: {response.status} {response.reason}"
@@ -100,7 +129,7 @@ class DartFinanceScraper:
                                         err_msg = f"Validation Error for {info}: {e}"
                                         self._logger.error(err_msg)
                                 if company_finance_info_list:
-                                    info_msg = collections_db.bulk_insert_if_not_exists(company_finance_info_list)
+                                    info_msg = collections_db.bulk_insert_collectdartfinance(company_finance_info_list)
                                     self._logger.info(info_msg)
                                     print(info_msg)
                             else:
@@ -118,7 +147,7 @@ class DartFinanceScraper:
 
     async def scrape_dart_finance(self) -> None:
         async with self as scraper:
-            info_msg = f"Start scraping dart finance info\n{len(self._size)} companies will be searched"
+            info_msg = f"Start scraping dart finance info\n{self._size} companies will be searched"
             self._logger.info(info_msg)
             print(info_msg)
             semaphore = asyncio.Semaphore(10)  # 동시 요청 수를 제어하는 세마포어
@@ -132,3 +161,17 @@ class DartFinanceScraper:
                                 name=f"{company_id}_{bsns_year}_{reprt_code}_{fs_div}")
                             tasks.append(task)
             await asyncio.gather(*tasks)
+        info_msg = f"Finish scraping dart finance info"
+        self._logger.info(info_msg)
+        print(info_msg)
+
+    async def _wait_until_midnight(self):
+        """현재 시간부터 다음 날 00:00까지 기다립니다."""
+        now = datetime.datetime.now()
+        tomorrow = now + datetime.timedelta(days=1)
+        midnight = datetime.datetime(year=tomorrow.year, month=tomorrow.month, day=tomorrow.day, hour=0, minute=0, second=0)
+        wait_seconds = (midnight - now).total_seconds()
+        info_msg = f"API limit reached. Waiting until midnight ({wait_seconds} seconds)"
+        self._logger.info(info_msg)
+        print(info_msg)
+        await asyncio.sleep(wait_seconds)

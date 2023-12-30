@@ -2,6 +2,7 @@ import traceback
 from typing import List
 from contextlib import contextmanager
 from typing import Optional
+import random
 
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.mysql import insert
@@ -57,8 +58,8 @@ class CollectionsDatabase:
                     CollectDart.company_id.in_(self._company_ids_from_newscrapcompanydartinfo),
                     CollectDart.stock_code != ''
                 ).all()
-                # 순서를 역순으로 정렬
-                existing_data.reverse() # <- 추후에는 제거
+                # 순서를 랜덤으로 셔플
+                random.shuffle(existing_data)
                 return existing_data    # [(company_id, corp_code), ...]
             except SQLAlchemyError as e:
                 err_msg = traceback.format_exc()
