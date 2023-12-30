@@ -223,7 +223,7 @@ class DartFinancePreprocessing:
                     financial_decide_code=_df.fs_div.values[0]
                     financial_decide_desc=_df.fs_nm.values[0]
                     thstrm_year, frmtrm_year, bfefrmtrm_year = year, str(int(year)-1), str(int(year)-2)
-                    thstrm_sales, frmtrm_sales, bfefrmtrm_sales = self._search_values(_df, sj_div='CIS', account_id='ifrs-full_Revenue')
+                    thstrm_sales, frmtrm_sales, bfefrmtrm_sales = self._search_values(_df, sj_div='CIS', account_id='ifrs-full_Revenue', alt_sj_div_ls=['IS'])
                     thstrm_sales_cost, frmtrm_sales_cost, bfefrmtrm_sales_cost = self._search_values(_df, sj_div='CIS', account_id='ifrs-full_CostOfSales', alt_account_nm_ls=['매출원가'])
                     thstrm_operating_profit, frmtrm_operating_profit, bfefrmtrm_operating_profit = self._search_values(_df, sj_div='CIS', account_id='dart_OperatingIncomeLoss', alt_sj_div_ls=['IS'])
                     thstrm_net_profit, frmtrm_net_profit, bfefrmtrm_net_profit = self._search_values(_df, sj_div='CIS', account_id='ifrs-full_ProfitLoss')
