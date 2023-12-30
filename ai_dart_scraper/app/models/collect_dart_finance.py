@@ -58,29 +58,29 @@ class CollectDartFinancePydantic(BaseModel):
 
     # 모델 필드 정의
     company_id: Optional[int] = None
-    rcept_no: Optional[str] = None
-    reprt_code: Optional[str] = None
-    bsns_year: Optional[str] = None
-    corp_code: Optional[str] = None
-    fs_div: Optional[str] = None
-    fs_nm: Optional[str] = None
-    sj_div: Optional[str] = None
-    sj_nm: Optional[str] = None
-    account_id: Optional[str] = None
-    account_nm: Optional[str] = None
-    account_detail: Optional[str] = None
-    thstrm_nm: Optional[str] = None
-    thstrm_amount: Optional[str] = None
-    thstrm_add_amount: Optional[str] = None
-    frmtrm_nm: Optional[str] = None
-    frmtrm_amount: Optional[str] = None
-    frmtrm_q_nm: Optional[str] = None
-    frmtrm_q_amount: Optional[str] = None
-    frmtrm_add_amount: Optional[str] = None
-    bfefrmtrm_nm: Optional[str] = None
-    bfefrmtrm_amount: Optional[str] = None
-    ord: Optional[str] = None
-    currency: Optional[str] = None
+    rcept_no: Optional[str] = ''
+    reprt_code: Optional[str] = ''
+    bsns_year: Optional[str] = ''
+    corp_code: Optional[str] = ''
+    fs_div: Optional[str] = ''
+    fs_nm: Optional[str] = ''
+    sj_div: Optional[str] = ''
+    sj_nm: Optional[str] = ''
+    account_id: Optional[str] = ''
+    account_nm: Optional[str] = ''
+    account_detail: Optional[str] = ''
+    thstrm_nm: Optional[str] = ''
+    thstrm_amount: Optional[str] = ''
+    thstrm_add_amount: Optional[str] = ''
+    frmtrm_nm: Optional[str] = ''
+    frmtrm_amount: Optional[str] = ''
+    frmtrm_q_nm: Optional[str] = ''
+    frmtrm_q_amount: Optional[str] = ''
+    frmtrm_add_amount: Optional[str] = ''
+    bfefrmtrm_nm: Optional[str] = ''
+    bfefrmtrm_amount: Optional[str] = ''
+    ord: Optional[str] = ''
+    currency: Optional[str] = ''
 
     class Config:
         from_attributes = True
