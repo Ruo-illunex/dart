@@ -194,7 +194,7 @@ class CollectionsDatabase:
                 if company_id:
                     existing_data = session.query(CollectDartFinance).filter(
                         CollectDartFinance.company_id == company_id,
-                        CollectDartFinance.rcept_no == '11011'  # 사업보고서만 조회
+                        CollectDartFinance.reprt_code == '11011'  # 사업보고서만 조회
                         ).all()
                     if existing_data:
                         df = pd.DataFrame([data.to_dict() for data in existing_data])
