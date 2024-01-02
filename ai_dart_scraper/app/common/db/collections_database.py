@@ -66,7 +66,7 @@ class CollectionsDatabase:
                 self.logger.error(f"Error: {e}\n{err_msg}")
 
     def bulk_upsert_data_collectdart(self, data_list: List[CollectDartPydantic]) -> None:
-        """데이터베이스에 데이터를 일괄 추가 또는 업데이트하는 함수
+        """데이터베이스에 기업 정보를 일괄 추가 또는 업데이트하는 함수
         Args:
             data_list (List[CollectDartPydantic]): 추가 또는 업데이트할 데이터 리스트
         """
@@ -96,7 +96,7 @@ class CollectionsDatabase:
                 self.logger.error(f"Error: {e}\n{err_msg}")
 
     def check_if_exists_collectdartfinance(self, corp_code: str, bsns_year: str, reprt_code: str, fs_div: str) -> bool:
-        """데이터베이스에 데이터가 있는지 확인하는 함수
+        """데이터베이스에 해당 연도의 재무정보가 있는지 확인하는 함수
         Args:
             corp_code (str): 기업 코드
             bsns_year (str): 사업 연도
@@ -146,7 +146,14 @@ class CollectionsDatabase:
                 return err_msg
 
     def query_collectdart(self, biz_num: str = None, corp_num: str = None, company_id: int = None) -> Optional[CollectDartPydantic]:
-        """데이터베이스에서 데이터를 조회하는 함수"""
+        """데이터베이스에서 기업 정보를 조회하는 함수
+        Args:
+            biz_num (str): 사업자등록번호
+            corp_num (str): 법인등록번호
+            company_id (int): 기업 ID
+        Returns:
+            Optional[CollectDartPydantic]: 조회한 데이터
+        """
         with self.get_session() as session:
             try:
                 assert biz_num or corp_num or company_id, "biz_num, corp_num, company_id 중 하나는 필수로 입력해야 합니다."
@@ -169,7 +176,14 @@ class CollectionsDatabase:
                 return None
 
     def query_collectdartfinance(self, biz_num: str = None, corp_num: str = None, company_id: int = None) -> pd.DataFrame:
-        """데이터베이스에서 데이터를 조회하는 함수"""
+        """데이터베이스에서 사업보고서 재무정보를 조회하는 함수
+        Args:
+            biz_num (str): 사업자등록번호
+            corp_num (str): 법인등록번호
+            company_id (int): 기업 ID
+        Returns:
+            pd.DataFrame: 조회한 데이터
+        """
         with self.get_session() as session:
             try:
                 assert biz_num or corp_num or company_id, "biz_num, corp_num, company_id 중 하나는 필수로 입력해야 합니다."
@@ -178,7 +192,10 @@ class CollectionsDatabase:
                 elif corp_num:
                     company_id = self._companies_db.query_companies(corporation_num=corp_num).get('id')
                 if company_id:
-                    existing_data = session.query(CollectDartFinance).filter(CollectDartFinance.company_id == company_id).all()
+                    existing_data = session.query(CollectDartFinance).filter(
+                        CollectDartFinance.company_id == company_id,
+                        CollectDartFinance.rcept_no == '11011'  # 사업보고서만 조회
+                        ).all()
                     if existing_data:
                         df = pd.DataFrame([data.to_dict() for data in existing_data])
                         return df

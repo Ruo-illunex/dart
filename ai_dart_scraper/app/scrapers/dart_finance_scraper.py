@@ -123,36 +123,49 @@ class DartFinanceScraper:
                     self._logger.info(info_msg)
                     print(info_msg)
 
-                    async with session.get(self._url, params=self._params) as response:
-                        if response.status != 200:  # API 호출 실패
-                            err_msg = f"Error: {response.status} {response.reason}"
-                            self._logger.error(err_msg)
-                        else:
-                            data = await response.json()
-                            status = data.get('status')
-                            message = data.get('message')
-                            if status == '000': # API 호출 성공
-                                company_finance_info_list = []
-                                for info in data.get('list'):
-                                    try:
-                                        info['company_id'] = company_id
-                                        info['fs_div'] = fs_div
-                                        info['fs_nm'] = '연결재무제표' if fs_div == 'CFS' else '별도재무제표'
-                                        finance_info = CollectDartFinancePydantic(**info)
-                                        company_finance_info_list.append(finance_info)
-                                        info_msg = f"Success: Get company finance info of {info.get('corp_code')} and added to list"
-                                        self._logger.info(info_msg)
-                                    except ValidationError as e:
-                                        err_msg = f"Validation Error for {info}: {e}"
-                                        self._logger.error(err_msg)
-                                if company_finance_info_list:   # 추가할 데이터가 있으면 일괄 추가
-                                    info_msg = collections_db.bulk_insert_collectdartfinance(company_finance_info_list)
-                                    self._logger.info(info_msg)
-                                    print(info_msg)
-                            else:   # API 호출 실패: 일부 데이터가 없는 경우도 있음
-                                err_msg = f"Error: {status} {message} for corp_code {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
+                    job_done = False
+                    while not job_done:
+                        async with session.get(self._url, params=self._params) as response:
+                            if response.status != 200:  # API 호출 실패
+                                err_msg = f"Error: {response.status} {response.reason}"
                                 self._logger.error(err_msg)
-                                print(err_msg)
+                            else:
+                                data = await response.json()
+                                status = data.get('status')
+                                message = data.get('message')
+                                if status == '000': # API 호출 성공
+                                    company_finance_info_list = []
+                                    for info in data.get('list'):
+                                        try:
+                                            info['company_id'] = company_id
+                                            info['fs_div'] = fs_div
+                                            info['fs_nm'] = '연결재무제표' if fs_div == 'CFS' else '별도재무제표'
+                                            finance_info = CollectDartFinancePydantic(**info)
+                                            company_finance_info_list.append(finance_info)
+                                            info_msg = f"Success: Get company finance info of {info.get('corp_code')} and added to list"
+                                            self._logger.info(info_msg)
+                                        except ValidationError as e:
+                                            err_msg = f"Validation Error for {info}: {e}"
+                                            self._logger.error(err_msg)
+                                            print(err_msg)
+                                    if company_finance_info_list:   # 추가할 데이터가 있으면 일괄 추가
+                                        info_msg = collections_db.bulk_insert_collectdartfinance(company_finance_info_list)
+                                        self._logger.info(info_msg)
+                                        print(info_msg)
+                                    job_done = True
+                                    break
+                                elif status in ['010', '011', '012', '020', '021', '800', '901']:
+                                    err_msg = f"Error: {status} {message} waiting until midnight"
+                                    self._logger.error(err_msg)
+                                    print(err_msg)
+                                    await self._wait_until_midnight()   # 자정까지 기다림
+                                    self._check_if_past_midnight()  # 자정 이후인지 확인 -> API 호출 횟수와 제한 횟수 초기화
+                                else:
+                                    err_msg = f"Error: {status} {message} for corp_code {corp_code} and bsns_year {bsns_year} and reprt_code {reprt_code} and fs_div {fs_div}"
+                                    self._logger.error(err_msg)
+                                    print(err_msg)
+                                    job_done = True
+                                    break
             except aiohttp.ClientError as e:
                 err_msg = f"ClientError: {e}"
                 self._logger.error(err_msg)

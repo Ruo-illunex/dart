@@ -74,36 +74,32 @@ class DartFinancePreprocessing:
             thstrm_amount = df[cond1 & cond2 & cond3].thstrm_amount.values[0]
             frmtrm_amount = df[cond1 & cond2 & cond3].frmtrm_amount.values[0]
             bfefrmtrm_amount = df[cond1 & cond2 & cond3].bfefrmtrm_amount.values[0]
-        # 항목명이 없을 경우
+            return self._preprocess_values(thstrm_amount), self._preprocess_values(frmtrm_amount), self._preprocess_values(bfefrmtrm_amount)
         except IndexError:
-            # 대체 항목명이 있을 경우
-            if alt_account_nm_ls:
-                for alt_account_nm in alt_account_nm_ls:
-                    thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, account_nm=alt_account_nm, sj_div=sj_div)
-                    if thstrm_amount != '':
-                        return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
-            if alt_account_id_ls:
-                for alt_account_id in alt_account_id_ls:
-                    thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, sj_div=sj_div, account_id=alt_account_id)
-                    if thstrm_amount != '':
-                        return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
-            if alt_sj_div_ls:
-                for alt_sj_div in alt_sj_div_ls:
-                    thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, sj_div=alt_sj_div, account_nm=account_nm, account_id=account_id)
-                    if thstrm_amount != '':
-                        return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
-            err_msg = traceback.format_exc()
-            self._logger.error(err_msg)
+            if thstrm_amount is None:   # 당기 값이 없을 경우
+                if alt_account_nm_ls:
+                    for alt_account_nm in alt_account_nm_ls:
+                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, account_nm=alt_account_nm, sj_div=sj_div)
+                        if thstrm_amount != '':
+                            return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
+                if alt_account_id_ls:
+                    for alt_account_id in alt_account_id_ls:
+                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, sj_div=sj_div, account_id=alt_account_id)
+                        if thstrm_amount != '':
+                            return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
+                if alt_sj_div_ls:
+                    for alt_sj_div in alt_sj_div_ls:
+                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, sj_div=alt_sj_div, account_nm=account_nm, account_id=account_id)
+                        if thstrm_amount != '':
+                            return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
+                err_msg = traceback.format_exc()
+                self._logger.error(err_msg)
         except Exception as e:
             err_msg = traceback.format_exc()
             self._logger.error(err_msg)
             self._logger.error(f"Error: {e}")
-        finally:
-            # 값이 없을 경우 빈 문자열로 대체
-            thstrm_amount = self._preprocess_values(thstrm_amount)
-            frmtrm_amount = self._preprocess_values(frmtrm_amount)
-            bfefrmtrm_amount = self._preprocess_values(bfefrmtrm_amount)
-            return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
+        finally:    # 예외 발생 시 빈 문자열 반환
+            return '', '', ''
 
     def _get_financial_dept_ratio(self, capital_total: str, dept_total: str) -> str:
         """부채비율을 계산하는 함수
