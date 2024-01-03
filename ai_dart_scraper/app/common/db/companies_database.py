@@ -18,7 +18,7 @@ class CompaniesDatabase:
         self.engine = create_engine(COMPANIES_DB_URL, pool_recycle=3600, pool_size=20, max_overflow=0)
         self.SessionLocal = sessionmaker(bind=self.engine)
         
-        file_path = FILE_PATHS['log'] + f'database'
+        file_path = FILE_PATHS['log'] + 'database'
         make_dir(file_path)
         file_path += f'/companies_{get_current_datetime()}.log'
         self.logger = setup_logger(

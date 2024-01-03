@@ -14,7 +14,7 @@ from app.models_init import CollectDartFinancePydantic
 
 class DartFinanceScraper:
     def __init__(self, bsns_year:int = None, api_call_limit: int = 19900) -> None:
-        file_path = FILE_PATHS["log"] + f'scrapers'
+        file_path = FILE_PATHS["log"] + 'scrapers'
         make_dir(file_path)
         file_path += f'/dart_finance_scraper_{get_current_datetime()}.log'
         self._logger = setup_logger(
