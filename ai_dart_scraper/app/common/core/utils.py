@@ -36,6 +36,15 @@ def get_current_datetime():
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
+def get_current_date():
+    """현재 날짜를 반환하는 함수
+
+    Returns:
+        str: 현재 날짜 문자열
+    """
+    return datetime.datetime.now().strftime('%Y-%m-%d')
+
+
 def get_corp_codes() -> dict:
     url = 'https://opendart.fss.or.kr/api/corpCode.xml'
     params = {'crtfc_key': DART_API_KEY}

@@ -52,40 +52,41 @@ class NewCompanyFinance(BaseCompanies):
     }
 
 
-
 class NewCompanyFinancePydantic(BaseModel):
     """기업 재무 정보 Pydantic 모델"""
     # 모델 필드 정의
-    company_id: int = None
-    biz_num: str = None
-    corporation_num: str = None
-    illu_id: str = None
-    acct_dt: str = None
-    financial_decide_code: str = None
-    financial_decide_desc: str = None
+    companyId: int = None
+    bizNum: str = None
+    corporationNum: str = None
+    illuId: str = None
+    acctDt: str = None
+    financialDecideCode: str = None
+    financialDecideDesc: str = None
     sales: str = None
-    sales_cost: str = None
-    operating_profit: str = None
-    net_profit: str = None
-    capital_amount: str = None
-    capital_total: str = None
-    debt_total: str = None
-    asset_total: str = None
-    comprehensive_income: str = None
-    financial_debt_ratio: str = None
-    tangible_asset: str = None
-    non_tangible_asset: str = None
-    current_asset: str = None
-    non_current_asset: str = None
-    current_liabilities: str = None
-    net_worth: str = None
-    quick_asset: str = None
-    inventories_asset: str = None
-    accounts_payable: str = None
-    trade_receivable: str = None
-    short_term_loan: str = None
-    net_working_capital: str = None
-    selling_general_administrative_expenses: str = None
-    
+    salesCost: str = None
+    operatingProfit: str = None
+    netProfit: str = None
+    capitalAmount: str = None
+    capitalTotal: str = None
+    debtTotal: str = None
+    assetTotal: str = None
+    comprehensiveIncome: str = None
+    financialDebtRatio: str = None
+    tangibleAsset: str = None
+    nonTangibleAsset: str = None
+    currentAsset: str = None
+    nonCurrentAsset: str = None
+    currentLiabilities: str = None
+    netWorth: str = None
+    quickAsset: str = None
+    inventoriesAsset: str = None
+    accountsPayable: str = None
+    tradeReceivable: str = None
+    shortTermLoan: str = None
+    netWorkingCapital: str = None
+    sellingGeneralAdministrativeExpenses: str = None
+    createDate: date = None
+    updateDate: date = None
+
     class Config:
         from_attributes = True
