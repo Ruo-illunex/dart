@@ -20,7 +20,7 @@ class DartFinancePreprocessing:
             file_path
         )
 
-    def _get_ids(self, company_id: str) -> tuple:
+    def _cal_ids(self, company_id: str) -> tuple:
         """기업 ID로 사업자등록번호와 법인등록번호를 조회하는 함수
         Args:
             company_id (str): 기업 ID
@@ -80,17 +80,23 @@ class DartFinancePreprocessing:
             else:
                 if alt_account_nm_ls:
                     for alt_account_nm in alt_account_nm_ls:
-                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, account_nm=alt_account_nm, sj_div=sj_div)
+                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(
+                            df, account_nm=alt_account_nm, sj_div=sj_div
+                            )
                         if thstrm_amount != '':
                             return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
                 if alt_account_id_ls:
                     for alt_account_id in alt_account_id_ls:
-                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, sj_div=sj_div, account_id=alt_account_id)
+                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(
+                            df, sj_div=sj_div, account_id=alt_account_id
+                            )
                         if thstrm_amount != '':
                             return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
                 if alt_sj_div_ls:
                     for alt_sj_div in alt_sj_div_ls:
-                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(df, sj_div=alt_sj_div, account_nm=account_nm, account_id=account_id)
+                        thstrm_amount, frmtrm_amount, bfefrmtrm_amount = self._search_values(
+                            df, sj_div=alt_sj_div, account_nm=account_nm, account_id=account_id
+                            )
                         if thstrm_amount != '':
                             return thstrm_amount, frmtrm_amount, bfefrmtrm_amount
                 return '', '', ''
@@ -100,7 +106,7 @@ class DartFinancePreprocessing:
             self._logger.error(f"Error: {e}")
             return '', '', ''
 
-    def _get_financial_dept_ratio(self, capital_total: str, dept_total: str) -> str:
+    def _cal_financial_dept_ratio(self, capital_total: str, dept_total: str) -> str:
         """부채비율을 계산하는 함수
         Args:
             capital_total (str): 자본총계
@@ -131,7 +137,7 @@ class DartFinancePreprocessing:
         finally:
             return financial_dept_ratio
 
-    def _get_net_worth(self, asset_total: str, dept_total: str) -> str:
+    def _cal_net_worth(self, asset_total: str, dept_total: str) -> str:
         """순자산총계를 계산하는 함수
         Args:
             asset_total (str): 자산총계
@@ -155,7 +161,7 @@ class DartFinancePreprocessing:
         finally:
             return networth_total
 
-    def _get_quick_asset(self, current_asset: str, inventories_asset: str) -> str:
+    def _cal_quick_asset(self, current_asset: str, inventories_asset: str) -> str:
         """당좌자산을 계산하는 함수
         Args:
             current_asset (str): 유동자산
@@ -179,7 +185,7 @@ class DartFinancePreprocessing:
         finally:
             return quick_asset
 
-    def _get_net_working_capital(self, current_asset: str, current_liabilities: str) -> str:
+    def _cal_net_working_capital(self, current_asset: str, current_liabilities: str) -> str:
         """순운전자본을 계산하는 함수
         Args:
             current_asset (str): 유동자산
@@ -222,40 +228,165 @@ class DartFinancePreprocessing:
 
         df = _df.loc[(_df['bsns_year'] == year) & (_df['fs_div'] == fs)]
 
-        thstrm_parsed = {}
-        frmtrm_parsed = {}
-        bfefrmtrm_parsed = {}
-        
-        financial_decide_code = df.fs_div.values[0]
-        financial_decide_desc = df.fs_nm.values[0]
-        thstrm_year, frmtrm_year, bfefrmtrm_year = year, str(int(year)-1), str(int(year)-2)
+        # 임시 변수 -> 당기, 전기, 전전기 재무 정보를 담을 딕셔너리
+        _ths = {}
+        _frm = {}
+        _bfe = {}
 
-        thstrm_parsed['sales'], frmtrm_parsed['sales'], bfefrmtrm_parsed['sales'] = self._search_values(df, account_id='ifrs-full_Revenue', alt_account_nm_ls=['매출액'])
-        thstrm_parsed['sales_cost'], frmtrm_parsed['sales_cost'], bfefrmtrm_parsed['sales_cost'] = self._search_values(df, account_id='ifrs-full_CostOfSales', alt_account_nm_ls=['매출원가'])
-        thstrm_parsed['operating_profit'], frmtrm_parsed['operating_profit'], bfefrmtrm_parsed['operating_profit'] = self._search_values(df, account_id='dart_OperatingIncomeLoss', alt_account_nm_ls=['영업이익'])
-        thstrm_parsed['net_profit'], frmtrm_parsed['net_profit'], bfefrmtrm_parsed['net_profit'] = self._search_values(df, sj_div='CIS', account_id='ifrs-full_ProfitLoss', alt_sj_div_ls=['IS'], alt_account_nm_ls=['당기순이익', '당기순이익(손실)'])
-        thstrm_parsed['capital_amount'], frmtrm_parsed['capital_amount'], bfefrmtrm_parsed['capital_amount'] = self._search_values(df, account_nm='자본금', sj_div='BS')
-        thstrm_parsed['capital_total'], frmtrm_parsed['capital_total'], bfefrmtrm_parsed['capital_total'] = self._search_values(df, account_nm='자본총계', sj_div='BS')
-        thstrm_parsed['dept_total'], frmtrm_parsed['dept_total'], bfefrmtrm_parsed['dept_total'] = self._search_values(df, account_nm='부채총계', sj_div='BS')
-        thstrm_parsed['assets_total'], frmtrm_parsed['assets_total'], bfefrmtrm_parsed['assets_total'] = self._search_values(df, account_nm='자산총계', sj_div='BS')
-        thstrm_parsed['comprehensive_income'], frmtrm_parsed['comprehensive_income'], bfefrmtrm_parsed['comprehensive_income'] = self._search_values(df, sj_div='CIS', account_id='ifrs-full_ComprehensiveIncome', alt_account_id_ls=['ifrs_ComprehensiveIncome'], alt_account_nm_ls=['총포괄손익'])
-        thstrm_parsed['tangible_asset'], frmtrm_parsed['tangible_asset'], bfefrmtrm_parsed['tangible_asset'] = self._search_values(df, account_id='ifrs-full_PropertyPlantAndEquipment', alt_account_id_ls=['ifrs_PropertyPlantAndEquipment'], alt_account_nm_ls=['유형자산'])
-        thstrm_parsed['none_tangible_asset'], frmtrm_parsed['none_tangible_asset'], bfefrmtrm_parsed['none_tangible_asset'] = self._search_values(df, account_id='ifrs-full_IntangibleAssetsOtherThanGoodwill', alt_account_id_ls=['dart_OtherIntangibleAssetsGross', 'dart_GoodwillGross'], alt_account_nm_ls=['무형자산'])
-        thstrm_parsed['current_asset'], frmtrm_parsed['current_asset'], bfefrmtrm_parsed['current_asset'] = self._search_values(df, account_id='ifrs-full_CurrentAssets', alt_account_id_ls=['ifrs_CurrentAssets'], alt_account_nm_ls=['유동자산'])
-        thstrm_parsed['none_current_asset'], frmtrm_parsed['none_current_asset'], bfefrmtrm_parsed['none_current_asset'] = self._search_values(df, account_id='ifrs-full_NoncurrentAssets', alt_account_id_ls=['ifrs_NonCurrentAssets'], alt_account_nm_ls=['비유동자산'])
-        thstrm_parsed['current_liabilities'], frmtrm_parsed['current_liabilities'], bfefrmtrm_parsed['current_liabilities'] = self._search_values(df, account_id='ifrs-full_CurrentLiabilities', alt_account_id_ls=['ifrs_CurrentLiabilities'], alt_account_nm_ls=['유동부채'])
-        thstrm_parsed['inventories_asset'], frmtrm_parsed['inventories_asset'], bfefrmtrm_parsed['inventories_asset'] = self._search_values(df, account_id='ifrs-full_Inventories', alt_account_id_ls=['ifrs_Inventories'], alt_account_nm_ls=['재고자산'])
-        thstrm_parsed['accounts_payable'], frmtrm_parsed['accounts_payable'], bfefrmtrm_parsed['accounts_payable'] = self._search_values(df, sj_div='BS', account_id='ifrs-full_TradeAndOtherCurrentPayables', alt_account_id_ls=['dart_ShortTermTradePayables'], alt_account_nm_ls=['매입채무', '단기매입채무'])
-        thstrm_parsed['trade_receivable'], frmtrm_parsed['trade_receivable'], bfefrmtrm_parsed['trade_receivable'] = self._search_values(df, sj_div='BS', account_id='ifrs-full_TradeAndOtherCurrentReceivables', alt_account_id_ls=['dart_ShortTermTradeReceivable'], alt_account_nm_ls=['매출채권', '단기매출채권'])
-        thstrm_parsed['short_term_loan'], frmtrm_parsed['short_term_loan'], bfefrmtrm_parsed['short_term_loan'] = self._search_values(df, sj_div='BS', account_id='ifrs-full_ShorttermBorrowings', alt_account_nm_ls=['단기차입금'])
-        thstrm_parsed['selling_general_administrative_expenses'], frmtrm_parsed['selling_general_administrative_expenses'], bfefrmtrm_parsed['selling_general_administrative_expenses'] = self._search_values(df, account_id='dart_TotalSellingGeneralAdministrativeExpenses')
-        thstrm_parsed['financial_debt_ratio'], frmtrm_parsed['financial_debt_ratio'], bfefrmtrm_parsed['financial_debt_ratio'] = self._get_financial_dept_ratio(thstrm_parsed['capital_total'], thstrm_parsed['dept_total']), self._get_financial_dept_ratio(frmtrm_parsed['capital_total'], frmtrm_parsed['dept_total']), self._get_financial_dept_ratio(bfefrmtrm_parsed['capital_total'], bfefrmtrm_parsed['dept_total'])
-        thstrm_parsed['net_worth'], frmtrm_parsed['net_worth'], bfefrmtrm_parsed['net_worth'] = self._get_net_worth(thstrm_parsed['assets_total'], thstrm_parsed['dept_total']), self._get_net_worth(frmtrm_parsed['assets_total'], frmtrm_parsed['dept_total']), self._get_net_worth(bfefrmtrm_parsed['assets_total'], bfefrmtrm_parsed['dept_total'])
-        thstrm_parsed['quick_asset'], frmtrm_parsed['quick_asset'], bfefrmtrm_parsed['quick_asset'] = self._get_quick_asset(thstrm_parsed['current_asset'], thstrm_parsed['inventories_asset']), self._get_quick_asset(frmtrm_parsed['current_asset'], frmtrm_parsed['inventories_asset']), self._get_quick_asset(bfefrmtrm_parsed['current_asset'], bfefrmtrm_parsed['inventories_asset'])
-        thstrm_parsed['networking_capital'], frmtrm_parsed['networking_capital'], bfefrmtrm_parsed['networking_capital'] = self._get_net_working_capital(thstrm_parsed['current_asset'], thstrm_parsed['current_liabilities']), self._get_net_working_capital(frmtrm_parsed['current_asset'], frmtrm_parsed['current_liabilities']), self._get_net_working_capital(bfefrmtrm_parsed['current_asset'], bfefrmtrm_parsed['current_liabilities'])
-        
-        # 각 당기, 전기, 전전기의 파싱된 값들이 dict_values(['', ''])가 아니 경우에만 각각 저장
-        if set(thstrm_parsed.values()) != {''}:
+        financial_decide_code = df.fs_div.values[0]  # 재무제표구분
+        financial_decide_desc = df.fs_nm.values[0]  # 재무제표명
+        thstrm_year, frmtrm_year, bfefrmtrm_year = year, str(int(year)-1), str(int(year)-2) # 당기, 전기, 전전기 연도
+
+        _ths['sales'], _frm['sales'], _bfe['sales'] = self._search_values(
+            df,
+            account_id='ifrs-full_Revenue',
+            alt_account_nm_ls=['매출액']
+            )   # 매출액
+
+        _ths['sales_cost'], _frm['sales_cost'], _bfe['sales_cost'] = self._search_values(
+            df,
+            account_id='ifrs-full_CostOfSales',
+            alt_account_nm_ls=['매출원가']
+            )   # 매출원가
+
+        _ths['operating_profit'], _frm['operating_profit'], _bfe['operating_profit'] = self._search_values(
+            df,
+            account_id='dart_OperatingIncomeLoss',
+            alt_account_nm_ls=['영업이익']
+            )   # 영업이익
+
+        _ths['net_profit'], _frm['net_profit'], _bfe['net_profit'] = self._search_values(
+            df,
+            sj_div='CIS',
+            account_id='ifrs-full_ProfitLoss',
+            alt_sj_div_ls=['IS'],
+            alt_account_nm_ls=['당기순이익', '당기순이익(손실)']
+            )   # 당기순이익
+
+        _ths['capital_amount'], _frm['capital_amount'], _bfe['capital_amount'] = self._search_values(
+            df,
+            account_nm='자본금',
+            sj_div='BS'
+            )   # 자본금
+
+        _ths['capital_total'], _frm['capital_total'], _bfe['capital_total'] = self._search_values(
+            df,
+            account_nm='자본총계',
+            sj_div='BS'
+            )   # 자본총계
+
+        _ths['dept_total'], _frm['dept_total'], _bfe['dept_total'] = self._search_values(
+            df,
+            account_nm='부채총계',
+            sj_div='BS'
+            )   # 부채총계
+
+        _ths['assets_total'], _frm['assets_total'], _bfe['assets_total'] = self._search_values(
+            df,
+            account_nm='자산총계',
+            sj_div='BS'
+            )   # 자산총계
+
+        _ths['comprehensive_income'], _frm['comprehensive_income'], _bfe['comprehensive_income'] = self._search_values(
+            df,
+            sj_div='CIS',
+            account_id='ifrs-full_ComprehensiveIncome',
+            alt_account_id_ls=['ifrs_ComprehensiveIncome'],
+            alt_account_nm_ls=['총포괄손익']
+            )   # 총포괄손익
+
+        _ths['tangible_asset'], _frm['tangible_asset'], _bfe['tangible_asset'] = self._search_values(
+            df,
+            account_id='ifrs-full_PropertyPlantAndEquipment',
+            alt_account_id_ls=['ifrs_PropertyPlantAndEquipment'],
+            alt_account_nm_ls=['유형자산']
+            )   # 유형자산
+
+        _ths['none_tangible_asset'], _frm['none_tangible_asset'], _bfe['none_tangible_asset'] = self._search_values(
+            df,
+            account_id='ifrs-full_IntangibleAssetsOtherThanGoodwill',
+            alt_account_id_ls=['dart_OtherIntangibleAssetsGross', 'dart_GoodwillGross'],
+            alt_account_nm_ls=['무형자산']
+            )   # 무형자산
+
+        _ths['current_asset'], _frm['current_asset'], _bfe['current_asset'] = self._search_values(
+            df,
+            account_id='ifrs-full_CurrentAssets',
+            alt_account_id_ls=['ifrs_CurrentAssets'],
+            alt_account_nm_ls=['유동자산']
+            )   # 유동자산
+
+        _ths['none_current_asset'], _frm['none_current_asset'], _bfe['none_current_asset'] = self._search_values(
+            df,
+            account_id='ifrs-full_NoncurrentAssets',
+            alt_account_id_ls=['ifrs_NonCurrentAssets'],
+            alt_account_nm_ls=['비유동자산']
+            )   # 비유동자산
+
+        _ths['current_liabilities'], _frm['current_liabilities'], _bfe['current_liabilities'] = self._search_values(
+            df,
+            account_id='ifrs-full_CurrentLiabilities',
+            alt_account_id_ls=['ifrs_CurrentLiabilities'],
+            alt_account_nm_ls=['유동부채']
+            )   # 유동부채
+
+        _ths['inventories_asset'], _frm['inventories_asset'], _bfe['inventories_asset'] = self._search_values(
+            df,
+            account_id='ifrs-full_Inventories',
+            alt_account_id_ls=['ifrs_Inventories'],
+            alt_account_nm_ls=['재고자산']
+            )   # 재고자산
+
+        _ths['accounts_payable'], _frm['accounts_payable'], _bfe['accounts_payable'] = self._search_values(
+            df,
+            sj_div='BS',
+            account_id='ifrs-full_TradeAndOtherCurrentPayables',
+            alt_account_id_ls=['dart_ShortTermTradePayables'],
+            alt_account_nm_ls=['매입채무', '단기매입채무']
+            )   # 매입채무
+
+        _ths['trade_receivable'], _frm['trade_receivable'], _bfe['trade_receivable'] = self._search_values(
+            df,
+            sj_div='BS',
+            account_id='ifrs-full_TradeAndOtherCurrentReceivables',
+            alt_account_id_ls=['dart_ShortTermTradeReceivable'],
+            alt_account_nm_ls=['매출채권', '단기매출채권']
+            )   # 매출채권
+
+        _ths['short_term_loan'], _frm['short_term_loan'], _bfe['short_term_loan'] = self._search_values(
+            df,
+            sj_div='BS',
+            account_id='ifrs-full_ShorttermBorrowings',
+            alt_account_nm_ls=['단기차입금']
+            )   # 단기차입금
+
+        _ths['admin_expenses'], _frm['admin_expenses'], _bfe['admin_expenses'] = self._search_values(
+            df,
+            account_id='dart_TotalSellingGeneralAdministrativeExpenses'
+            )   # 판매비와 관리비
+
+        # 부채비율
+        _ths['financial_debt_ratio'] = self._cal_financial_dept_ratio(_ths['capital_total'], _ths['dept_total'])
+        _frm['financial_debt_ratio'] = self._cal_financial_dept_ratio(_frm['capital_total'], _frm['dept_total'])
+        _bfe['financial_debt_ratio'] = self._cal_financial_dept_ratio(_bfe['capital_total'], _bfe['dept_total'])
+
+        # 순자산총계
+        _ths['net_worth'] = self._cal_net_worth(_ths['assets_total'], _ths['dept_total'])
+        _frm['net_worth'] = self._cal_net_worth(_frm['assets_total'], _frm['dept_total'])
+        _bfe['net_worth'] = self._cal_net_worth(_bfe['assets_total'], _bfe['dept_total'])
+
+        # 당좌자산
+        _ths['quick_asset'] = self._cal_quick_asset(_ths['current_asset'], _ths['inventories_asset'])
+        _frm['quick_asset'] = self._cal_quick_asset(_frm['current_asset'], _frm['inventories_asset'])
+        _bfe['quick_asset'] = self._cal_quick_asset(_bfe['current_asset'], _bfe['inventories_asset'])
+
+        # 순운전자본
+        _ths['networking_capital'] = self._cal_net_working_capital(_ths['current_asset'], _ths['current_liabilities'])
+        _frm['networking_capital'] = self._cal_net_working_capital(_frm['current_asset'], _frm['current_liabilities'])
+        _bfe['networking_capital'] = self._cal_net_working_capital(_bfe['current_asset'], _bfe['current_liabilities'])
+
+        # 재무 정보 파싱 결과를 NewCompanyFinancePydantic 형태로 저장
+        if set(_ths.values()) != {''}:  # _ths.values()에 값이 하나라도 있으면
             thstrm_company_finance = NewCompanyFinancePydantic(
                 companyId=company_id,
                 bizNum=biz_num,
@@ -264,34 +395,34 @@ class DartFinancePreprocessing:
                 acctDt=thstrm_year,
                 financialDecideCode=financial_decide_code,
                 financialDecideDesc=financial_decide_desc,
-                sales=thstrm_parsed['sales'],
-                salesCost=thstrm_parsed['sales_cost'],
-                operatingProfit=thstrm_parsed['operating_profit'],
-                netProfit=thstrm_parsed['net_profit'],
-                capitalAmount=thstrm_parsed['capital_amount'],
-                capitalTotal=thstrm_parsed['capital_total'],
-                debtTotal=thstrm_parsed['dept_total'],
-                assetTotal=thstrm_parsed['assets_total'],
-                comprehensiveIncome=thstrm_parsed['comprehensive_income'],
-                financialDebtRatio=thstrm_parsed['financial_debt_ratio'],
-                tangibleAsset=thstrm_parsed['tangible_asset'],
-                nonTangibleAsset=thstrm_parsed['none_tangible_asset'],
-                currentAsset=thstrm_parsed['current_asset'],
-                nonCurrentAsset=thstrm_parsed['none_current_asset'],
-                currentLiabilities=thstrm_parsed['current_liabilities'],
-                netWorth=thstrm_parsed['net_worth'],
-                quickAsset=thstrm_parsed['quick_asset'],
-                inventoriesAsset=thstrm_parsed['inventories_asset'],
-                accountsPayable=thstrm_parsed['accounts_payable'],
-                tradeReceivable=thstrm_parsed['trade_receivable'],
-                shortTermLoan=thstrm_parsed['short_term_loan'],
-                netWorkingCapital=thstrm_parsed['networking_capital'],
-                sellingGeneralAdministrativeExpenses=thstrm_parsed['selling_general_administrative_expenses'],
+                sales=_ths['sales'],
+                salesCost=_ths['sales_cost'],
+                operatingProfit=_ths['operating_profit'],
+                netProfit=_ths['net_profit'],
+                capitalAmount=_ths['capital_amount'],
+                capitalTotal=_ths['capital_total'],
+                debtTotal=_ths['dept_total'],
+                assetTotal=_ths['assets_total'],
+                comprehensiveIncome=_ths['comprehensive_income'],
+                financialDebtRatio=_ths['financial_debt_ratio'],
+                tangibleAsset=_ths['tangible_asset'],
+                nonTangibleAsset=_ths['none_tangible_asset'],
+                currentAsset=_ths['current_asset'],
+                nonCurrentAsset=_ths['none_current_asset'],
+                currentLiabilities=_ths['current_liabilities'],
+                netWorth=_ths['net_worth'],
+                quickAsset=_ths['quick_asset'],
+                inventoriesAsset=_ths['inventories_asset'],
+                accountsPayable=_ths['accounts_payable'],
+                tradeReceivable=_ths['trade_receivable'],
+                shortTermLoan=_ths['short_term_loan'],
+                netWorkingCapital=_ths['networking_capital'],
+                sellingGeneralAdministrativeExpenses=_ths['admin_expenses'],
                 createDate=create_date,
                 updateDate=update_date
-            )
+            )   # 당기 재무 정보
 
-        if set(frmtrm_parsed.values()) != {''}:
+        if set(_frm.values()) != {''}:  # _frm.values()에 값이 하나라도 있으면
             frmtrm_company_finance = NewCompanyFinancePydantic(
                 companyId=company_id,
                 bizNum=biz_num,
@@ -300,34 +431,34 @@ class DartFinancePreprocessing:
                 acctDt=frmtrm_year,
                 financialDecideCode=financial_decide_code,
                 financialDecideDesc=financial_decide_desc,
-                sales=frmtrm_parsed['sales'],
-                salesCost=frmtrm_parsed['sales_cost'],
-                operatingProfit=frmtrm_parsed['operating_profit'],
-                netProfit=frmtrm_parsed['net_profit'],
-                capitalAmount=frmtrm_parsed['capital_amount'],
-                capitalTotal=frmtrm_parsed['capital_total'],
-                debtTotal=frmtrm_parsed['dept_total'],
-                assetTotal=frmtrm_parsed['assets_total'],
-                comprehensiveIncome=frmtrm_parsed['comprehensive_income'],
-                financialDebtRatio=frmtrm_parsed['financial_debt_ratio'],
-                tangibleAsset=frmtrm_parsed['tangible_asset'],
-                nonTangibleAsset=frmtrm_parsed['none_tangible_asset'],
-                currentAsset=frmtrm_parsed['current_asset'],
-                nonCurrentAsset=frmtrm_parsed['none_current_asset'],
-                currentLiabilities=frmtrm_parsed['current_liabilities'],
-                netWorth=frmtrm_parsed['net_worth'],
-                quickAsset=frmtrm_parsed['quick_asset'],
-                inventoriesAsset=frmtrm_parsed['inventories_asset'],
-                accountsPayable=frmtrm_parsed['accounts_payable'],
-                tradeReceivable=frmtrm_parsed['trade_receivable'],
-                shortTermLoan=frmtrm_parsed['short_term_loan'],
-                netWorkingCapital=frmtrm_parsed['networking_capital'],
-                sellingGeneralAdministrativeExpenses=frmtrm_parsed['selling_general_administrative_expenses'],
+                sales=_frm['sales'],
+                salesCost=_frm['sales_cost'],
+                operatingProfit=_frm['operating_profit'],
+                netProfit=_frm['net_profit'],
+                capitalAmount=_frm['capital_amount'],
+                capitalTotal=_frm['capital_total'],
+                debtTotal=_frm['dept_total'],
+                assetTotal=_frm['assets_total'],
+                comprehensiveIncome=_frm['comprehensive_income'],
+                financialDebtRatio=_frm['financial_debt_ratio'],
+                tangibleAsset=_frm['tangible_asset'],
+                nonTangibleAsset=_frm['none_tangible_asset'],
+                currentAsset=_frm['current_asset'],
+                nonCurrentAsset=_frm['none_current_asset'],
+                currentLiabilities=_frm['current_liabilities'],
+                netWorth=_frm['net_worth'],
+                quickAsset=_frm['quick_asset'],
+                inventoriesAsset=_frm['inventories_asset'],
+                accountsPayable=_frm['accounts_payable'],
+                tradeReceivable=_frm['trade_receivable'],
+                shortTermLoan=_frm['short_term_loan'],
+                netWorkingCapital=_frm['networking_capital'],
+                sellingGeneralAdministrativeExpenses=_frm['admin_expenses'],
                 createDate=create_date,
                 updateDate=update_date
-            )
-            
-        if set(bfefrmtrm_parsed.values()) != {''}:
+            )   # 전기 재무 정보
+
+        if set(_bfe.values()) != {''}:  # _bfe.values()에 값이 하나라도 있으면
             bfefrmtrm_company_finance = NewCompanyFinancePydantic(
                 companyId=company_id,
                 bizNum=biz_num,
@@ -336,40 +467,38 @@ class DartFinancePreprocessing:
                 acctDt=bfefrmtrm_year,
                 financialDecideCode=financial_decide_code,
                 financialDecideDesc=financial_decide_desc,
-                sales=bfefrmtrm_parsed['sales'],
-                salesCost=bfefrmtrm_parsed['sales_cost'],
-                operatingProfit=bfefrmtrm_parsed['operating_profit'],
-                netProfit=bfefrmtrm_parsed['net_profit'],
-                capitalAmount=bfefrmtrm_parsed['capital_amount'],
-                capitalTotal=bfefrmtrm_parsed['capital_total'],
-                debtTotal=bfefrmtrm_parsed['dept_total'],
-                assetTotal=bfefrmtrm_parsed['assets_total'],
-                comprehensiveIncome=bfefrmtrm_parsed['comprehensive_income'],
-                financialDebtRatio=bfefrmtrm_parsed['financial_debt_ratio'],
-                tangibleAsset=bfefrmtrm_parsed['tangible_asset'],
-                nonTangibleAsset=bfefrmtrm_parsed['none_tangible_asset'],
-                currentAsset=bfefrmtrm_parsed['current_asset'],
-                nonCurrentAsset=bfefrmtrm_parsed['none_current_asset'],
-                currentLiabilities=bfefrmtrm_parsed['current_liabilities'],
-                netWorth=bfefrmtrm_parsed['net_worth'],
-                quickAsset=bfefrmtrm_parsed['quick_asset'],
-                inventoriesAsset=bfefrmtrm_parsed['inventories_asset'],
-                accountsPayable=bfefrmtrm_parsed['accounts_payable'],
-                tradeReceivable=bfefrmtrm_parsed['trade_receivable'],
-                shortTermLoan=bfefrmtrm_parsed['short_term_loan'],
-                netWorkingCapital=bfefrmtrm_parsed['networking_capital'],
-                sellingGeneralAdministrativeExpenses=bfefrmtrm_parsed['selling_general_administrative_expenses'],
+                sales=_bfe['sales'],
+                salesCost=_bfe['sales_cost'],
+                operatingProfit=_bfe['operating_profit'],
+                netProfit=_bfe['net_profit'],
+                capitalAmount=_bfe['capital_amount'],
+                capitalTotal=_bfe['capital_total'],
+                debtTotal=_bfe['dept_total'],
+                assetTotal=_bfe['assets_total'],
+                comprehensiveIncome=_bfe['comprehensive_income'],
+                financialDebtRatio=_bfe['financial_debt_ratio'],
+                tangibleAsset=_bfe['tangible_asset'],
+                nonTangibleAsset=_bfe['none_tangible_asset'],
+                currentAsset=_bfe['current_asset'],
+                nonCurrentAsset=_bfe['none_current_asset'],
+                currentLiabilities=_bfe['current_liabilities'],
+                netWorth=_bfe['net_worth'],
+                quickAsset=_bfe['quick_asset'],
+                inventoriesAsset=_bfe['inventories_asset'],
+                accountsPayable=_bfe['accounts_payable'],
+                tradeReceivable=_bfe['trade_receivable'],
+                shortTermLoan=_bfe['short_term_loan'],
+                netWorkingCapital=_bfe['networking_capital'],
+                sellingGeneralAdministrativeExpenses=_bfe['admin_expenses'],
                 createDate=create_date,
                 updateDate=update_date
-            )
+            )   # 전전기 재무 정보
 
         del df
-        del thstrm_parsed
-        del frmtrm_parsed
-        del bfefrmtrm_parsed
-
+        del _ths
+        del _frm
+        del _bfe
         return thstrm_company_finance, frmtrm_company_finance, bfefrmtrm_company_finance
-
 
     def preprocess(self, df: pd.DataFrame) -> Optional[List[NewCompanyFinancePydantic]]:
         """OpenDartReader를 이용해 수집한 기업 재무 정보를 DB에 저장하기 위해 전처리하는 함수
@@ -381,7 +510,7 @@ class DartFinancePreprocessing:
         results = []
         try:
             company_id = df['company_id'][0]    # company_id는 모두 동일
-            biz_num, corporation_num, illu_id = self._get_ids(company_id)   # 사업자등록번호, 법인등록번호, 일루넥스 ID
+            biz_num, corporation_num, illu_id = self._cal_ids(company_id)   # 사업자등록번호, 법인등록번호, 일루넥스 ID
             create_date, update_date = get_current_date(), get_current_date()   # 생성일, 수정일
             years = df['bsns_year'].unique().tolist()   # 연도
             fs_divs = df['fs_div'].unique().tolist()    # 재무제표구분
