@@ -28,6 +28,10 @@ RUN poetry install --only main
 # 애플리케이션 코드 복사
 COPY . .
 
+# 헬스체크 명령 추가
+HEALTHCHECK --interval=5m --timeout=30s \
+    CMD curl -f http://localhost:8080/health || exit 1
+
 # 애플리케이션 포트 노출
 EXPOSE 8080
 
