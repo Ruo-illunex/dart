@@ -12,7 +12,7 @@ from app.database_init import companies_db
 
 class DartFinancePreprocessing:
     def __init__(self):
-        file_path = FILE_PATHS["log"] + f'preprocessing'
+        file_path = FILE_PATHS["log"] + 'preprocessing'
         make_dir(file_path)
         file_path += f'/dart_finance_preprocessing_{get_current_datetime()}.log'
         self._logger = setup_logger(
