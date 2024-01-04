@@ -38,3 +38,6 @@ SYNOLOGY_CHAT = {
     'dev_token': os.getenv('SYNOLOGY_CHAT_DEV_TOKEN'),
     'test_token': os.getenv('SYNOLOGY_CHAT_TEST_TOKEN')
 }
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+ALGORITHM = os.getenv('ALGORITHM')

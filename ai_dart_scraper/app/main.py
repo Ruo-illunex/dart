@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 
 from typing import Optional
 
@@ -11,6 +11,7 @@ from app.common.db.base import BaseCollections, BaseCompanies
 from app.api.dart_info_routers import router as dart_info_router
 from app.api.dart_finance_routers import router as dart_finance_router
 from app.config.settings import FILE_PATHS, SYNOLOGY_CHAT
+from app.config.auth import verify_token
 
 
 # 로거 설정
@@ -48,16 +49,15 @@ async def health_check():
 
 
 @app.get("/scrape/dart_info")
-async def scrape_dart_info():
+async def scrape_dart_info(token: str = Depends(verify_token)):
     """OpenDartReader를 이용해 모든 기업의 기업 정보를 수집하는 함수"""
     scraper = DartInfoScraper()
     await scraper.scrape_dart_info()
     return {"status": "Scraping in progress..."}
 
 
-# bsns_year: Optional[int] = None -> parameter가 없으면 None으로 설정
 @app.get("/scrape/dart_finance")
-async def scrape_dart_finance(bsns_year: Optional[int] = None, api_call_limit: Optional[int] = 20000):
+async def scrape_dart_finance(bsns_year: Optional[int] = None, api_call_limit: Optional[int] = 20000, token: str = Depends(verify_token)):
     """OpenDartReader를 이용해 모든 기업의 재무 정보를 수집하는 함수"""
     scraper = DartFinanceScraper(bsns_year=bsns_year, api_call_limit=api_call_limit)
     await scraper.scrape_dart_finance()

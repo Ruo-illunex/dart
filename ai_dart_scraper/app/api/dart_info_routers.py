@@ -1,7 +1,7 @@
 from typing import List, Optional
 import traceback
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 
 from app.database_init import collections_db
@@ -10,10 +10,11 @@ from app.common.core.utils import get_current_datetime, make_dir
 from app.config.settings import FILE_PATHS
 from app.common.log.log_config import setup_logger
 from app.preprocessing.dart_info_preprocessing import DartInfoPreprocessing
+from app.config.auth import verify_token
 
 
 router = APIRouter()
-file_path = FILE_PATHS["log"] + f'api'
+file_path = FILE_PATHS["log"] + 'api'
 make_dir(file_path)
 file_path += f'/dart_info_routers_{get_current_datetime()}.log'
 logger = setup_logger(
@@ -55,7 +56,7 @@ def get_company_info(bizNum: str = None, corpNum: str = None, companyId: str = N
 
 
 @router.get("/dart/info/business/{bizNum}", response_model=NewCompanyInfoResponse)
-def get_company_info_by_biznum_endpoint(bizNum: str):
+def get_company_info_by_biznum_endpoint(bizNum: str, token: str = Depends(verify_token)):
     """사업자등록번호로 기업 정보를 조회하는 API
     Args:
         bizNum (str): 사업자등록번호
@@ -76,7 +77,7 @@ def get_company_info_by_biznum_endpoint(bizNum: str):
 
 
 @router.get("/dart/info/corporation/{corpNum}", response_model=NewCompanyInfoResponse)
-def get_company_info_by_corpnum_endpoint(corpNum: str):
+def get_company_info_by_corpnum_endpoint(corpNum: str, token: str = Depends(verify_token)):
     """법인등록번호로 기업 정보를 조회하는 API
     Args:
         corpNum (str): 법인등록번호
@@ -97,7 +98,7 @@ def get_company_info_by_corpnum_endpoint(corpNum: str):
 
 
 @router.get("/dart/info/company/{companyId}", response_model=NewCompanyInfoResponse)
-def get_company_info_by_companyid_endpoint(companyId: str):
+def get_company_info_by_companyid_endpoint(companyId: str, token: str = Depends(verify_token)):
     """기업 ID로 기업 정보를 조회하는 API
     Args:
         companyId (str): 기업 ID

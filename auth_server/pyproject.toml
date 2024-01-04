@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "auth-server"
+version = "0.1.0"
+description = ""
+authors = ["ruo <ruo@illunex.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.108.0"
+uvicorn = "^0.25.0"
+pyjwt = "^2.8.0"
+python-dotenv = "^1.0.0"
+passlib = "^1.7.4"
+python-multipart = "^0.0.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
